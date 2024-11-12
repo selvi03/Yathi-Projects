@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Training Data{% endblock %}
+
+{% block js %}
+    <script src="{% static 'plugins/@highlightjs/cdn-assets/highlight.min.js' %}"></script>
+    <script src="{% static 'js/demo/highlightjs.demo.js' %}"></script>
+    <script src="{% static 'js/demo/sidebar-scrollspy.demo.js' %}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Change dropdown text color to black */
+    select {
+        color: black !important; /* Changes the text color of dropdown options */
+        background-color: white !important;
+    }
+
+    #callback-date-picker {
+        width: 100%; /* Make the date picker match table cell width */
+        display: none; /* Initially hide the date picker */
+        margin-top: 20px; /* Adjust margin for spacing */
+        background-color: #a52a2a; /* Change background color */
+        border: 1px solid #a52a2a; /* Change border color */
+        color: black !important; /* Change text color */
+        padding: 8px;
+    }
+
+    #initiated-date-picker {
+        width: 100%; /* Make the date picker match table cell width */
+        display: none; /* Initially hide the date picker */
+        margin-top: 20px; /* Adjust margin for spacing */
+        background-color: #a52a2a; /* Change background color */
+        border: 1px solid #a52a2a; /* Change border color */
+        color: black !important; /* Change text color */
+        padding: 8px;
+    }
+
+    #followup-date-picker {
+        width: 100%; /* Make the date picker match table cell width */
+        display: none; /* Initially hide the date picker */
+        margin-top: 20px; /* Adjust margin for spacing */
+        background-color: #a52a2a; /* Change background color */
+        border: 1px solid #a52a2a; /* Change border color */
+        color: black !important; /* Change text color */
+        padding: 8px;
+    }
+
+    .dropdown-black {
+        color: black; /* Changes the text color of dropdown options */
+    }
+
+    .card {
+        position: relative;
+        border: 2px solid transparent; /* Set border to transparent */
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow effect */
+        margin: 30px 0; /* Add vertical margin space */
+        padding: 20px; /* Add padding inside the card */
+    }
+
+    .card-arrow {
+        position: absolute;
+    }
+
+    .card-arrow-top-left {
+        border-width: 0 10px 10px 0; /* Triangle left */
+        border-style: solid;
+        border-color: transparent transparent transparent transparent; /* Arrow color */
+        top: -10px; /* Adjust position */
+        left: -10px; /* Adjust position */
+    }
+
+    .card-arrow-top-right {
+        border-width: 0 0 10px 10px; /* Triangle right */
+        border-style: solid;
+        border-color: transparent transparent transparent transparent; /* Arrow color */
+        top: -10px; /* Adjust position */
+        right: -10px; /* Adjust position */
+    }
+
+    .card-arrow-bottom-left {
+        border-width: 10px 10px 0 0; /* Triangle left */
+        border-style: solid;
+        border-color: transparent transparent transparent transparent; /* Arrow color */
+        bottom: -10px; /* Adjust position */
+        left: -10px; /* Adjust position */
+    }
+
+    .card-arrow-bottom-right {
+        border-width: 10px 0 0 10px; /* Triangle right */
+        border-style: solid;
+        border-color: transparent transparent transparent transparent; /* Arrow color */
+        bottom: -10px; /* Adjust position */
+        right: -10px; /* Adjust position */
+    }
+
+    .hidden-column {
+        display: none; /* Hide the column */
+    }
+
+    .table-responsive {
+        overflow-x: auto; /* Allow horizontal scrolling if the table overflows */
+        margin-right: -15px; /* Remove right margin to move the table closer to the right side */
+    }
+
+    .table {
+        width: auto; /* Set table width to auto to prevent it from stretching */
+        table-layout: auto; /* Allow the table to resize based on content */
+    }
+
+    .date-picker {
+        margin-top: 40px !important; /* Add gap between date picker and status dropdown */
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4 text-theme">Lateral Training</h1>
+
+    <div class="card h-100">
+        <div class="card-arrow">
+            <div class="card-arrow-top-left"></div>
+            <div class="card-arrow-top-right"></div>
+            <div class="card-arrow-bottom-left"></div>
+            <div class="card-arrow-bottom-right"></div>
+        </div>
+
+        <div class="table-responsive">
+            <form method="POST">
+                {% csrf_token %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Training Name</th>
+                            <th>Trainer Name</th>
+                            <th>Date</th>
+                            <th>Duration</th>
+                            <th>Location</th>
+                            <th>Feedback</th>
+                            <th>Remarks</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Display Existing Data -->
+                        {% for item in data %}
+                        <tr>
+                            <td>{{ item.training_name }}</td>
+                            <td>{{ item.trainer_name }}</td>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.duration }}</td>
+                            <td>{{ item.location }}</td>
+                            <td>{{ item.feedback }}</td>
+                            <td>{{ item.remarks }}</td>
+                            <td>{{ item.reference }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No data available</td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Data Entry Row -->
+                        <tr>
+                            <td>{{ form.training_name }}</td>
+                            <td>{{ form.trainer_name }}</td>
+                            <td>{{ form.date }}</td>
+                            <td>{{ form.duration }}</td>
+                            <td>{{ form.location }}</td>
+                            <td>{{ form.feedback }}</td>
+                            <td>{{ form.remarks }}</td>
+                            <td>{{ form.reference }}</td>
+                        </tr>
+                        
+                        <!-- Add Data Button -->
+                        <tr>
+                            <td colspan="8" class="text-right">
+                                <button type="submit" class="btn btn-outline-theme">Add Data</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- Bottom Navigation Tabs -->
+                <div class="nav nav-tabs">
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-1" href="/organization-data/">Campus Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link active text-theme outline-theme" id="tab-2" href="/training-data/">Lateral Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-3" href="/corporate_training/">Corporate Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-4" href="/placement-training/">Placement Training</a>
+                    </div>
+                    <!-- Add more tabs as needed -->
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

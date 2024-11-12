@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Update{% endblock %}
+
+{% block content %}
+<div class="register">
+    <div class="register-content">
+
+        <h1 class="text-center">Update Your Profile</h1>
+
+        <!-- Search Form -->
+        <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="GET" class="mb-4">
+            <div class="input-group">
+                <input type="email" name="search_email" class="form-control" 
+                       placeholder="Enter email to search" value="{{ request.GET.search_email }}">
+                <button type="submit" class="btn btn-outline-primary">Search</button>
+            </div>
+        </form>
+
+        <!-- Profile Update Form -->
+        <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="POST">
+            {% csrf_token %}
+
+            {% if profile %}
+                <div class="mb-3">
+                    <label class="form-label">Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                           value="{{ profile.name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                           value="{{ profile.email }}" required readonly>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                    <input type="password" name="password" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                           value="{{ profile.password }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Country <span class="text-danger">*</span></label>
+                    <select name="country" class="form-select form-select-lg bg-inverse bg-opacity-5" required>
+                        <option value="India" {% if profile.country == 'India' %}selected{% endif %}>India</option>
+                        <option value="United States" {% if profile.country == 'United States' %}selected{% endif %}>
+                            United States
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Gender <span class="text-danger">*</span></label>
+                    <select name="gender" class="form-select form-select-lg bg-inverse bg-opacity-5" required>
+                        <option value="Male" {% if profile.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if profile.gender == 'Female' %}selected{% endif %}>Female</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                    <input type="date" name="birth_date" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                           value="{{ profile.birth_date }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" name="update" class="btn btn-outline-theme btn-lg d-block w-100">Update</button>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" name="delete" class="btn btn-outline-danger btn-lg d-block w-100">Delete</button>
+                </div>
+            {% else %}
+                <p class="text-danger text-center">No profile found for the given email.</p>
+            {% endif %}
+        </form>
+
+    </div>
+</div>
+{% endblock %}

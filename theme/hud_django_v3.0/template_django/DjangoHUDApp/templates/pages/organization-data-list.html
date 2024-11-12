@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Organization List{% endblock %}
+
+{% block js %}
+    <script src="{% static 'plugins/@highlightjs/cdn-assets/highlight.min.js' %}"></script>
+    <script src="{% static 'js/demo/highlightjs.demo.js' %}"></script>
+    <script src="{% static 'js/demo/sidebar-scrollspy.demo.js' %}"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %}
+
+{% block content %}
+<style>
+    select {
+        color: black !important;
+        background-color: white !important;
+    }
+
+    .update-btn {
+        margin-right: 10px;
+    }
+
+    .card {
+        position: relative;
+        border: 2px solid transparent;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin: 30px 0;
+        padding: 20px;
+    }
+
+    .card-arrow {
+        position: absolute;
+    }
+
+    .card-arrow-top-left,
+    .card-arrow-top-right,
+    .card-arrow-bottom-left,
+    .card-arrow-bottom-right {
+        border-style: solid;
+        border-color: transparent;
+    }
+
+    .card-arrow-top-left {
+        border-width: 0 10px 10px 0;
+        top: -10px;
+        left: -10px;
+    }
+
+    .card-arrow-top-right {
+        border-width: 0 0 10px 10px;
+        top: -10px;
+        right: -10px;
+    }
+
+    .card-arrow-bottom-left {
+        border-width: 10px 10px 0 0;
+        bottom: -10px;
+        left: -10px;
+    }
+
+    .card-arrow-bottom-right {
+        border-width: 10px 0 0 10px;
+        bottom: -10px;
+        right: -10px;
+    }
+
+    .date-picker,
+    .date-time-column {
+        display: none;
+    }
+
+    .date-time-picker {
+        width: 100%;
+        margin-top: 20px;
+        background-color: #a52a2a;
+        border: 1px solid #a52a2a;
+        color: black !important;
+        padding: 8px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        margin-right: -15px;
+    }
+
+    .table {
+        width: auto;
+        table-layout: auto;
+    }
+
+    .date-picker {
+        margin-top: 40px !important;
+    }
+</style>
+<div class="container mt-5">
+    <h1 class="text-center mb-4 text-theme">Campus Training</h1>
+    <div id="message" style="margin-top: 20px; display:none;"></div>
+    <!-- Add a form around the search input to submit the query -->
+    <form method="GET" action="{% url 'DjangoHUDApp:organization-data-list' %}" id="search-form">
+        <div class="input-group mb-3">
+            <input type="text" id="searchInput" name="q" value="{{ query }}" class="form-control" placeholder="Search by organization name, SPOC, etc." aria-label="Search">
+        </div>
+    </form>
+    <div class="card h-100">
+        <div class="card-arrow">
+            <div class="card-arrow-top-left"></div>
+            <div class="card-arrow-top-right"></div>
+            <div class="card-arrow-bottom-left"></div>
+            <div class="card-arrow-bottom-right"></div>
+        </div>
+
+        <div class="table-responsive">
+            <form id="org-data-form" action="{% url 'DjangoHUDApp:organization-data-list' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Organization Name</th>
+                            <th>SPOC Name</th>
+                            <th>Designation</th>
+                            <th>Phone No</th>
+                            <th>Email</th>
+                            <th>Address</th>
+                            <th>Location</th>
+                            <th>Website</th>
+                            <th>Source Data</th>
+                            <th>Status</th>
+                            <th>Feedback</th>
+                            <th>Remark</th>
+                            <th>Reference</th>
+                            <th>Callback Date</th>
+                            <th>Initiated Date</th>
+                            <th>Follow-up Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        {% for item in data %}
+                        <tr class="hover-row" data-id="{{ item.id }}">
+                            <td contenteditable="true">{{ item.org_name }}</td>
+                            <td contenteditable="true">{{ item.spoc_name }}</td>
+                            <td contenteditable="true">{{ item.designation }}</td>
+                            <td contenteditable="true">{{ item.phone_no }}</td>
+                            <td contenteditable="true">{{ item.email }}</td>
+                            <td contenteditable="true">{{ item.address }}</td>
+                            <td contenteditable="true">{{ item.location }}</td>
+                            <td contenteditable="true">{{ item.website }}</td>
+                            <td>{{ item.get_source_data_display }}</td>
+                            <td>{{ item.get_status_display }}</td>
+                            <td>{{ item.get_feedback_display }}</td>
+                            <td contenteditable="true">{{ item.remark }}</td>
+                            <td contenteditable="true">{{ item.reference }}</td>
+                            <td>{{ item.callback_date }}</td>
+                            <td>{{ item.initiated_date }}</td>
+                            <td>{{ item.followup_date }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="17" class="text-center text-theme">No data available</td>
+                        </tr>
+                        {% endfor %}
+                        <tr data-id="{{ item.id }}">
+                            <td>{{ form.org_name }}</td>
+                            <td>{{ form.spoc_name }}</td>
+                            <td>{{ form.designation }}</td>
+                            <td>{{ form.phone_no }}</td>
+                            <td>{{ form.email }}</td>
+                            <td>{{ form.address }}</td>
+                            <td>{{ form.location }}</td>
+                            <td>{{ form.website }}</td>
+                            <td>{{ form.source_data }}</td>
+                            <td>{{ form.status }}</td>
+                            <td>{{ form.feedback }}</td>
+                            <td>{{ form.remark }}</td>
+                            <td>{{ form.reference }}</td>
+                            <td>
+                                <input type="datetime-local" id="callback_date" name="callback_date" class="date-picker" placeholder="Select Callback Date">
+                            </td>
+                            <td>
+                                <input type="datetime-local" id="initiated_date" name="initiated_date" class="date-picker" placeholder="Select Initiated Date">
+                            </td>
+                            <td>
+                                <input type="datetime-local" id="followup_date" name="followup_date" class="date-picker" placeholder="Select Follow-up Date">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="17" class="text-right">
+                                <button type="submit" class="btn btn-outline-theme">Submit</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- Bottom Navigation Tabs -->
+                <div class="nav nav-tabs">
+                    <div class="nav-item">
+                        <a class="nav-link active text-theme outline-theme" id="tab-1" href="/organization-data/">Campus Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-2" href="/training-data/">Lateral Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-3" href="/corporate_training/">Corporate Training</a>
+                    </div>
+                    <div class="nav-item">
+                        <a class="nav-link text-theme outline-theme" id="tab-4" href="/placement-training/">Placement Training</a>
+                    </div>
+                    <!-- Add more tabs as needed -->
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const messageDiv = document.getElementById("message");
+        const statusDropdown = document.querySelector("[name='status']");
+        const callbackDateInput = document.getElementById("callback_date");
+        const initiatedDateInput = document.getElementById("initiated_date");
+        const followupDateInput = document.getElementById("followup_date");
+        const searchInput = document.getElementById("searchInput");
+        const tableBody = document.getElementById("table-body");
+
+        const requiredFields = [
+            'org_name', 'spoc_name', 'designation', 'phone_no', 'email', 
+            'address', 'location', 'website', 'source_data', 'status', 
+            'feedback', 'remark', 'reference'
+        ];
+
+        // Initialize flatpickr date pickers
+        flatpickr([callbackDateInput, initiatedDateInput, followupDateInput], {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+        });
+
+        // Toggle visibility of date pickers based on status
+        function toggleDatePicker() {
+            const selectedStatus = statusDropdown.value;
+            callbackDateInput.style.display = "none";
+            initiatedDateInput.style.display = "none";
+            followupDateInput.style.display = "none";
+
+            if (selectedStatus === "callback") {
+                callbackDateInput.style.display = "block";
+            } else if (selectedStatus === "initiated") {
+                initiatedDateInput.style.display = "block";
+            } else if (selectedStatus === "follow_up") {
+                followupDateInput.style.display = "block";
+            }
+        }
+
+        statusDropdown.addEventListener("change", toggleDatePicker);
+        toggleDatePicker(); // Call on load to set initial visibility
+
+        // Display message
+        function displayMessage(text, type) {
+            messageDiv.innerText = text;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+        }
+
+        // Auto-save function
+        function autoSave(updatedData, id) {
+            console.log("Auto-saving data:", updatedData, "for ID:", id);
+
+            const missingFields = requiredFields.filter(field => !updatedData[field]);
+            if (missingFields.length > 0) {
+                displayMessage("Please fill out all required fields: " + missingFields.join(", "), "error");
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: `/DjangoHUDApp/organization-data-list/`,
+                data: JSON.stringify(updatedData),
+                contentType: 'application/json',
+                headers: { "X-CSRFToken": csrfToken },
+                success: function(response) {
+                    if (response.success) {
+                        displayMessage("Data updated successfully!", "success");
+                    } else {
+                        displayMessage("Failed to update: " + (response.message || "Unknown error"), "error");
+                    }
+                },
+                error: function(xhr) {
+                    displayMessage("An error occurred during update: " + xhr.statusText, "error");
+                }
+            });
+        }
+
+        // Handle update button click
+        document.querySelectorAll('.update-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const id = row.getAttribute('data-id');
+
+                const updatedData = {
+                    org_name: row.querySelector("[name='org_name']").innerText,
+                    spoc_name: row.querySelector("[name='spoc_name']").innerText,
+                    designation: row.querySelector("[name='designation']").innerText,
+                    phone_no: row.querySelector("[name='phone_no']").innerText,
+                    email: row.querySelector("[name='email']").innerText,
+                    address: row.querySelector("[name='address']").innerText,
+                    location: row.querySelector("[name='location']").innerText,
+                    website: row.querySelector("[name='website']").innerText,
+                    status: row.querySelector("[name='status']").value,
+                    source_data: row.querySelector("[name='source_data']").value,
+                    feedback: row.querySelector("[name='feedback']").value,
+                    remark: row.querySelector("[name='remark']").innerText,
+                    reference: row.querySelector("[name='reference']").innerText,
+                    callback_date: statusDropdown.value === 'callback' ? callbackDateInput.value : null,
+                    initiated_date: statusDropdown.value === 'initiated' ? initiatedDateInput.value : null,
+                    followup_date: statusDropdown.value === 'follow_up' ? followupDateInput.value : null
+                };
+
+                autoSave(updatedData, id);
+            });
+        });
+
+        // Update table rows
+        function updateTable(rows) {
+            tableBody.innerHTML = "";
+            if (rows.length > 0) {
+                rows.forEach(row => tableBody.appendChild(row));
+            } else {
+                const noDataRow = document.createElement("tr");
+                noDataRow.innerHTML = "<td colspan='16' class='text-center'>No results found</td>";
+                tableBody.appendChild(noDataRow);
+            }
+        }
+
+        // Filter table rows
+        searchInput.addEventListener("input", function() {
+            const query = searchInput.value.toLowerCase().trim();
+            if (query === "") {
+                location.reload();
+                return;
+            }
+
+            const rows = Array.from(tableBody.querySelectorAll("tr"));
+            const filteredRows = rows.filter(row => {
+                return Array.from(row.cells).some(cell => cell.textContent.toLowerCase().includes(query));
+            });
+
+            updateTable(filteredRows);
+        });
+    });
+</script>
+{% endblock %} 

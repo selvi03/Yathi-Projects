@@ -1,0 +1,63 @@
+{% comment %} {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="login">
+    <div class="login-content">
+        <!-- Role Selection -->
+		<div class="d-flex mb-4">
+            <a href="{% url 'DjangoHUDApp:pageLogin' %}" 
+               class="btn btn-outline-theme w-50 me-2 text-center">Student</a>
+            <a href="{% url 'DjangoHUDApp:pageAdmin' %}" 
+               class="btn btn-outline-danger w-50 text-center">Admin</a>
+        </div>
+
+        <form action="" method="POST" name="login_form">
+            {% csrf_token %}
+            <h1 class="text-center"> Admin Sign In</h1>
+            <div class="text-inverse text-opacity-50 text-center mb-4">
+                For your protection, please verify your identity.
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Admin Type <span class="text-danger">*</span></label>
+                <select name="admin_type" class="form-select form-select-lg bg-inverse bg-opacity-5" required>
+                    <option value="" disabled selected>Select Admin Type</option>
+                    <option value="training">Training Admin</option>
+                    <option value="placement">Placement Admin</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Admin Id <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                       name="email" placeholder="">
+            </div>
+
+
+            <div class="mb-3">
+                <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                       name="email" placeholder="">
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex">
+                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                    <a href="#" class="ms-auto text-inverse text-decoration-none text-opacity-50">Forgot password?</a>
+                </div>
+                <input type="password" class="form-control form-control-lg bg-inverse bg-opacity-5" 
+                       name="password" placeholder="">
+            </div>
+            <button type="submit" class="btn btn-outline-theme btn-lg d-block w-100 fw-500 mb-3">Sign In</button>
+            <div class="text-center text-inverse text-opacity-50">
+                Don't have an account yet? <a href="{% url 'DjangoHUDApp:pageRegister' %}">Sign up</a>.
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %} {% endcomment %}
