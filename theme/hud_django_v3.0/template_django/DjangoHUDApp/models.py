@@ -151,15 +151,42 @@ class CorporateTraining(models.Model):
         return self.course_name  # This will be displayed in the admin
 
 class Profile(models.Model):
+    
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)
-    country = models.CharField(max_length=50)
     gender = models.CharField(max_length=10)
     birth_date = models.DateField()
+    mobile_number = models.CharField(max_length=15)
+    college_name = models.CharField(max_length=100)
+    id_number = models.CharField(max_length=50)
+    batch_number = models.CharField(max_length=50)
+    city = models.CharField(max_length=100)
+    address = models.TextField()
+    state = models.CharField(max_length=100)
+    country = models.CharField(max_length=50)
+    qualification = models.CharField(max_length=100)
+    experience = models.PositiveIntegerField()
+    language = models.CharField(max_length=20)
+    skills = models.CharField(max_length=20)
+    locations = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=100)
+    branch_name = models.CharField(max_length=100)
+    ifsc_code = models.CharField(max_length=20)
+    account_number = models.CharField(max_length=20)
+    pan_number = models.CharField(max_length=20)
+    gst_number = models.CharField(max_length=20)
+    photo = models.ImageField(upload_to='photos/', blank=True, null=True)
+    certificate = models.FileField(upload_to='certificates/', blank=True, null=True)
+    ready_to_relocate = models.BooleanField(default=False)
+    resume = models.FileField(upload_to='resumes/', blank=True, null=True)
 
-    def __str__(self):
-        return self.name
+    def save(self, *args, **kwargs):
+        if self.password and not self.password.startswith('$'):  # Hash password if it's plain text
+            self.password = make_password(self.password)
+        super(Profile, self).save(*args, **kwargs)
+
+
 
 class LoginLogoutEvent(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='events')

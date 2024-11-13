@@ -1,81 +1,305 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Update{% endblock %}
+{% block title %}Update Profile{% endblock %}
 
 {% block content %}
-<div class="register">
-    <div class="register-content">
+<style>
+    .form-group label {
+        font-weight: bold;
+        display: inline-block;
+        margin: 0.8rem; /* Increased margin for label */
+    }
 
-        <h1 class="text-center">Update Your Profile</h1>
+    .submit-btn {
+        width: 100%; /* Button width set to 100% for block display */
+        font-size: 15px; 
+        margin-bottom: 1rem; /* Added margin bottom for spacing */
+        display: block; /* Ensures the button is block-level for centering */
+        margin-left: auto; 
+        margin-right: auto; /* Centers the button horizontally */
+    } 
 
-        <!-- Search Form -->
-        <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="GET" class="mb-4">
-            <div class="input-group">
-                <input type="email" name="search_email" class="form-control" 
+    @media (max-width: 767px) {
+        .submit-btn {
+            width: 50%; /* Button width adjusted for small screens */
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center">Update Profile</h1>
+
+    <!-- Search Form -->
+    <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="GET" class="mb-2">
+        <div class="d-flex justify-content-center align-items-center mt-3">
+            <div class="input-group" style="width: 400px;">
+                <input type="email" name="search_email" class="form-control search_email" 
                        placeholder="Enter email to search" value="{{ request.GET.search_email }}">
-                <button type="submit" class="btn btn-outline-primary">Search</button>
+                <button type="submit" class="btn btn-lg btn-success submit-btn2">Submit</button>
             </div>
-        </form>
+        </div>
+    </form>
 
-        <!-- Profile Update Form -->
-        <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="POST">
-            {% csrf_token %}
+    <!-- Profile Update Form -->
+    {% if profile %}
+    <form action="{% url 'DjangoHUDApp:profileupdate' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row mt-4">
+            <!-- Name Field -->
+            <div class="col-md-4 form-group">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" id="name" name="name" class="form-control form-control-lg" 
+                       value="{{ profile.name }}" required>
+            </div>
 
-            {% if profile %}
-                <div class="mb-3">
-                    <label class="form-label">Name <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control form-control-lg bg-inverse bg-opacity-5" 
-                           value="{{ profile.name }}" required>
+            <!-- Email Field -->
+            <div class="col-md-4 form-group">
+                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                <input type="email" id="email" name="email" class="form-control form-control-lg" 
+                       value="{{ profile.email }}" readonly>
+            </div>
+
+            <!-- Password Field -->
+            <div class="col-md-4 form-group">
+                <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                <input type="password" id="password" name="password" class="form-control form-control-lg" required>
+            </div>
+        </div>
+
+
+
+        <div class="row mt-2">
+          
+            <!-- Gender Field -->
+            <div class="col-md-4 form-group">
+                <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
+                <select id="gender" name="gender" class="form-select form-select-lg" required>
+                    <option value="Male" {% if profile.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if profile.gender == 'Female' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+
+            <!-- Date of Birth Field -->
+            <div class="col-md-4 form-group">
+                <label for="birth_date" class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                <input type="date" id="birth_date" name="birth_date" class="form-control form-control-lg" 
+                       value="{{ profile.birth_date }}" required>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label for="mobile_number" class="form-label">Mobile Number <span class="text-danger">*</span></label>
+                <input type="tel" id="mobile_number" name="mobile_number" class="form-control form-control-lg" 
+                       value="{{ profile.mobile_number }}" required>
+            </div>
+
+        </div>
+
+        <div class="row mt-2">
+            <!-- College Name Field -->
+            <div class="col-md-4 form-group">
+                <label for="college_name" class="form-label">College Name <span class="text-danger">*</span></label>
+                <input type="text" id="college_name" name="college_name" class="form-control form-control-lg" 
+                       value="{{ profile.college_name }}" required>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label for="id_number" class="form-label">ID Number <span class="text-danger">*</span></label>
+                <input type="text" id="id_number" name="id_number" class="form-control form-control-lg" 
+                       value="{{ profile.id_number }}" required>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label for="batch_number" class="form-label">Batch Number <span class="text-danger">*</span></label>
+                <input type="text" id="batch_number" name="batch_number" class="form-control form-control-lg" 
+                       value="{{ profile.batch_number }}" required>
+            </div>
+
+        </div>
+
+        <div class="row mt-2">
+           <!-- City Field -->
+                <div class="col-md-4 form-group">
+                        <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+                        <input type="text" id="city" name="city" class="form-control form-control-lg" 
+                        value="{{ profile.city }}" required>
                 </div>
+            <!-- Address Field -->
+                    <div class="col-md-4 form-group">
+                        <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                        <input type="text" id="address" name="address" class="form-control form-control-lg" 
+                            value="{{ profile.address }}" required>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Email Address <span class="text-danger">*</span></label>
-                    <input type="email" name="email" class="form-control form-control-lg bg-inverse bg-opacity-5" 
-                           value="{{ profile.email }}" required readonly>
-                </div>
+                        <!-- State Field -->
+                        <div class="col-md-4 form-group">
+                            <label for="state" class="form-label">State <span class="text-danger">*</span></label>
+                            <input type="text" id="state" name="state" class="form-control form-control-lg" 
+                                value="{{ profile.state }}" required>
+                        </div>
+        </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <input type="password" name="password" class="form-control form-control-lg bg-inverse bg-opacity-5" 
-                           value="{{ profile.password }}" required>
-                </div>
+        <div class="row mt-2">
+          
 
-                <div class="mb-3">
-                    <label class="form-label">Country <span class="text-danger">*</span></label>
-                    <select name="country" class="form-select form-select-lg bg-inverse bg-opacity-5" required>
-                        <option value="India" {% if profile.country == 'India' %}selected{% endif %}>India</option>
-                        <option value="United States" {% if profile.country == 'United States' %}selected{% endif %}>
-                            United States
-                        </option>
+            <div class="col-md-4 form-group">
+                <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
+                <select id="country" name="country" class="form-select form-select-lg" required>
+                    <option value="India" {% if profile.country == 'India' %}selected{% endif %}>India</option>
+                    <option value="United States" {% if profile.country == 'United States' %}selected{% endif %}>United States</option>
+                </select>
+            </div>
+
+            <!-- Qualification Field -->
+            <div class="col-md-4 form-group">
+                <label for="qualification" class="form-label">Qualification <span class="text-danger">*</span></label>
+                <input type="text" id="qualification" name="qualification" class="form-control form-control-lg" 
+                       value="{{ profile.qualification }}" required>
+            </div>
+
+            <!-- Experience Field -->
+            <div class="col-md-4 form-group">
+                <label for="experience" class="form-label">Experience (in years) <span class="text-danger">*</span></label>
+                <input type="number" id="experience" name="experience" class="form-control form-control-lg" 
+                       value="{{ profile.experience }}" required>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <!-- Mobile Number Field -->
+           
+
+            <!-- Language Field -->
+            <div class="col-md-4 form-group">
+                <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
+                <select id="language" name="language" class="form-select form-select-lg" required>
+                    <option value="English" {% if profile.language == 'English' %}selected{% endif %}>English</option>
+                    <option value="Hindi" {% if profile.language == 'Hindi' %}selected{% endif %}>Hindi</option>
+                </select>
+            </div>
+
+
+         <!-- Skills Field -->
+                <div class="col-md-4 form-group">
+                    <label for="skills" class="form-label">Skills<span class="text-danger">*</span></label>
+                    <select id="skills" name="skills" class="form-select form-select-lg" required>
+                        <option value="Python" {% if profile.language == 'Python' %}selected{% endif %}>Python</option>
+                        <option value="JavaScript" {% if profile.language == 'JavaScript' %}selected{% endif %}>JavaScript</option>
+                        <option value="Java" {% if profile.language == 'Java' %}selected{% endif %}>Java</option>
+
                     </select>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Gender <span class="text-danger">*</span></label>
-                    <select name="gender" class="form-select form-select-lg bg-inverse bg-opacity-5" required>
-                        <option value="Male" {% if profile.gender == 'Male' %}selected{% endif %}>Male</option>
-                        <option value="Female" {% if profile.gender == 'Female' %}selected{% endif %}>Female</option>
-                    </select>
-                </div>
+           
 
-                <div class="mb-3">
-                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                    <input type="date" name="birth_date" class="form-control form-control-lg bg-inverse bg-opacity-5" 
-                           value="{{ profile.birth_date }}" required>
-                </div>
+        <!-- Locations Field -->
+                    <div class="col-md-4 form-group">
+                        <label for="locations" class="form-label">Preferred Locations <span class="text-danger">*</span></label>
+                        <input type="text" id="locations" name="locations" class="form-control form-control-lg" 
+                            value="{{ profile.locations }}" required>
+                    </div>
+        </div>
 
-                <div class="mb-3">
-                    <button type="submit" name="update" class="btn btn-outline-theme btn-lg d-block w-100">Update</button>
-                </div>
-                <div class="mb-3">
-                    <button type="submit" name="delete" class="btn btn-outline-danger btn-lg d-block w-100">Delete</button>
-                </div>
-            {% else %}
-                <p class="text-danger text-center">No profile found for the given email.</p>
-            {% endif %}
-        </form>
+        <div class="row mt-2">
+           
 
-    </div>
+            <!-- Bank Name Field -->
+            <div class="col-md-4 form-group">
+                <label for="bank_name" class="form-label">Bank Name <span class="text-danger">*</span></label>
+                <input type="text" id="bank_name" name="bank_name" class="form-control form-control-lg" 
+                       value="{{ profile.bank_name }}" required>
+            </div>
+
+            <!-- Branch Name Field -->
+            <div class="col-md-4 form-group">
+                <label for="branch_name" class="form-label">Branch Name <span class="text-danger">*</span></label>
+                <input type="text" id="branch_name" name="branch_name" class="form-control form-control-lg" 
+                       value="{{ profile.branch_name }}" required>
+            </div>
+                    <!-- IFSC Code Field -->
+                    <div class="col-md-4 form-group">
+                        <label for="ifsc_code" class="form-label">IFSC Code <span class="text-danger">*</span></label>
+                        <input type="text" id="ifsc_code" name="ifsc_code" class="form-control form-control-lg" 
+                            value="{{ profile.ifsc_code }}" required>
+                    </div>
+
+        </div>
+
+
+        <div class="row mt-2">
+            <!-- Account Number Field -->
+            <div class="col-md-4 form-group">
+                <label for="account_number" class="form-label">Account Number <span class="text-danger">*</span></label>
+                <input type="text" id="account_number" name="account_number" class="form-control form-control-lg" 
+                       value="{{ profile.account_number }}" required>
+            </div>
+
+            <!-- PAN Number Field -->
+            <div class="col-md-4 form-group">
+                <label for="pan_number" class="form-label">PAN Number <span class="text-danger">*</span></label>
+                <input type="text" id="pan_number" name="pan_number" class="form-control form-control-lg" 
+                       value="{{ profile.pan_number }}" required>
+            </div>
+                       <!-- GST Number Field -->
+                    <div class="col-md-4 form-group">
+                        <label for="gst_number" class="form-label">GST Number <span class="text-danger">*</span></label>
+                        <input type="text" id="gst_number" name="gst_number" class="form-control form-control-lg" 
+                            value="{{ profile.gst_number }}" required>
+                    </div>
+
+        </div>
+
+        <div class="row mt-2">
+            
+
+            <!-- Photo Field -->
+            <div class="col-md-4 form-group">
+                <label for="photo" class="form-label">Upload Photo</label>
+                <input type="file" id="photo" name="photo" class="form-control form-control-lg">
+            </div>
+
+            <!-- Certificate Field -->
+            <div class="col-md-4 form-group">
+                <label for="certificate" class="form-label">Upload Certificate</label>
+                <input type="file" id="certificate" name="certificate" class="form-control form-control-lg">
+            </div>
+             <!-- Ready to Relocate Field -->
+                    <div class="col-md-4 form-group">
+                        <label for="ready_to_relocate" class="form-label">Ready to Relocate <span class="text-danger">*</span></label>
+                        <select id="ready_to_relocate" name="ready_to_relocate" class="form-select form-select-lg" required>
+                            <option value="Yes" {% if profile.ready_to_relocate == 'Yes' %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if profile.ready_to_relocate == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+        </div>
+
+        <div class="row mt-2">
+           
+
+            <!-- Resume Field -->
+            <div class="col-md-4 form-group">
+                <label for="resume" class="form-label">Upload Resume</label>
+                <input type="file" id="resume" name="resume" class="form-control form-control-lg">
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <!-- Update Button -->
+            <!-- Update Button -->
+<div class="col-md-4 form-group">
+    <button type="submit" name="update" class="btn btn-lg btn-success submit-btn">Update</button>
 </div>
+
+<!-- Delete Button -->
+<div class="col-md-4 form-group">
+    <button type="submit" name="delete" class="btn btn-lg btn-danger submit-btn">Delete</button>
+</div>
+
+        </div>
+    </form>
+    {% else %}
+        <p class="text-danger text-center">No profile found for the given email.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

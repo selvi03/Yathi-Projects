@@ -77,11 +77,18 @@ WSGI_APPLICATION = 'DjangoHUD.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tododb',       # Replace with your database name
+        'USER': 'vishal',        # Replace with your database username
+        'PASSWORD': 'vishal@123', # Replace with your database password
+        'HOST': 'localhost',      # Set to 'localhost' for local development
+        'PORT': '5432',           # Default PostgreSQL port
     }
 }
+import os
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

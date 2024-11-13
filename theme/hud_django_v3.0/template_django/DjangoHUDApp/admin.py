@@ -31,9 +31,18 @@ class CorporateTrainingAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'country', 'gender', 'birth_date')
-    search_fields = ('name', 'email')  # Add search functionality
-    list_filter = ('country', 'gender')  # Add filtering options
+    # Fields to display in the list view
+    list_display = (
+        'name', 'email', 'gender', 'birth_date', 'mobile_number', 'college_name', 
+        'id_number', 'batch_number', 'city', 'state', 'country', 'qualification', 
+        'experience', 'language', 'skills', 'locations', 'bank_name', 'branch_name', 
+        'ifsc_code', 'account_number', 'pan_number', 'gst_number', 'ready_to_relocate'
+    )
+    
+    search_fields = ('name', 'email', 'college_name', 'mobile_number', 'city', 'state', 'country', 'skills')
+    list_filter = ('gender', 'country', 'qualification', 'ready_to_relocate', 'language', 'skills')
+    ordering = ('name',)  # You can change to '-name' for reverse order if needed
+    readonly_fields = ('photo', 'certificate', 'resume')  # Only if you want to prevent editing these fields
 
 @admin.register(LoginLogoutEvent)
 class LoginLogoutEventAdmin(admin.ModelAdmin):

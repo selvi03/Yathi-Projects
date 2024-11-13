@@ -84,16 +84,27 @@ class CorporateTrainingForm(forms.ModelForm):
 
 
 class ProfileForm(forms.ModelForm):
-    birth_month = forms.ChoiceField(choices=[('01', 'Jan'), ('02', 'Feb')], required=True)
-    birth_day = forms.ChoiceField(choices=[(str(i), str(i)) for i in range(1, 32)], required=True)
-    birth_year = forms.ChoiceField(choices=[(str(i), str(i)) for i in range(1980, 2025)], required=True)
-
     class Meta:
         model = Profile
-        fields = ['name', 'email', 'password', 'country', 'gender']
+        fields = [
+            'name', 'email', 'password', 'gender', 'birth_date', 'mobile_number', 'college_name',
+            'id_number', 'batch_number', 'city', 'address', 'state', 'country', 'qualification',
+            'experience', 'language', 'skills', 'locations', 'bank_name', 'branch_name', 'ifsc_code',
+            'account_number', 'pan_number', 'gst_number', 'photo', 'certificate', 'resume', 'ready_to_relocate'
+        ]
+        widgets = {
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'password': forms.PasswordInput(),
+            'email': forms.EmailInput(attrs={'placeholder': 'Enter your email address'}),
+            'mobile_number': forms.TextInput(attrs={'placeholder': 'Enter mobile number'}),
+            'address': forms.Textarea(attrs={'placeholder': 'Enter address'}),
+            # Add more widgets if needed
+        }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        birth_date = f"{cleaned_data.get('birth_year')}-{cleaned_data.get('birth_month')}-{cleaned_data.get('birth_day')}"
-        cleaned_data['birth_date'] = birth_date
-        return cleaned_data
+    def clean_password(self):
+        # Hash the password before saving
+        password = self.cleaned_data['password']
+        # You can hash it using Django's make_password function, e.g.:
+        # from django.contrib.auth.hashers import make_password
+        # return make_password(password)
+        return password  # Make sure to hash it if needed, or use Django's built-in password hashing

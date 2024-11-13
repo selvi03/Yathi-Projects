@@ -242,6 +242,11 @@ def pageadmin(request):
     return render(request, "pages/page-admin.html", context)
 
 
+from django.contrib.auth.hashers import check_password
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from .models import Profile, LoginLogoutEvent
+
 def pageLogin(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -257,7 +262,7 @@ def pageLogin(request):
             # Store user id in session
             request.session['user_id'] = profile.id
             messages.success(request, "Login successful!")
-            return redirect('DjangoHUDApp:organization-data-list')
+            return redirect('DjangoHUDApp:landing')
         except Profile.DoesNotExist:
             messages.error(request, "Invalid email or password. Please try again.")
 
@@ -285,93 +290,74 @@ def logout(request):
 
     return redirect('DjangoHUDApp:landing')
 
+
 def index(request):
     return render(request, "pages/index.html") 
 
 
+from .forms import ProfileForm
+
+
 def profileadd(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        country = request.POST.get('country')
-        gender = request.POST.get('gender')
-        
-        birth_month = request.POST.get('birth_month')
-        birth_day = request.POST.get('birth_day')
-        birth_year = request.POST.get('birth_year')
-
-        try:
-            # Create a date object from the submitted data
-            birth_date = datetime.strptime(f"{birth_year}-{birth_month}-{birth_day}", "%Y-%m-%d").date()
-
-            # Save the profile to the database
-            Profile.objects.create(
-                name=name,
-                email=email,
-                password=password,
-                country=country,
-                gender=gender,
-                birth_date=birth_date,
-            )
-            # Show success message
-            messages.success(request, "Profile added successfully!")
-        except Exception as e:
-            # Show error message if something goes wrong
-            messages.error(request, f"Error: {str(e)}")
+        form = ProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile added successfully.')
+            return redirect('DjangoHUDApp:landing')  # Redirect to another page after successful save
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProfileForm()
 
     context = {
+        'form': form,
         "appSidebarHide": 1,
         "appHeaderHide": 1,
         "appContentClass": 'p-0'
     }
-    return render(request, "pages/profile-add.html", context)
+    
+    return render(request, 'pages/profile-add.html', context)
+
+
+
+
 
 
 def profileupdate(request):
+    profile = None
+
+    # Handle search by email
+    if 'search_email' in request.GET:
+        search_email = request.GET['search_email']
+        try:
+            profile = Profile.objects.get(email=search_email)
+        except Profile.DoesNotExist:
+            messages.error(request, 'No profile found for the given email.')
+            profile = None
+
+    # Handle form submission for update or delete
+    if request.method == 'POST' and profile:
+        if 'update' in request.POST:
+            form = ProfileForm(request.POST, request.FILES, instance=profile)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Profile updated successfully.')
+                return redirect('DjangoHUDApp:landing')  # Redirect after successful update
+            else:
+                messages.error(request, 'Please correct the errors below.')
+        elif 'delete' in request.POST:
+            profile.delete()
+            messages.success(request, 'Profile deleted successfully.')
+            return redirect('DjangoHUDApp:profileupdate')  # Redirect after deletion
+
+    # Pass the profile to the template for display
     context = {
         "appSidebarHide": 1,
         "appHeaderHide": 1,
-        "appContentClass": 'p-0'
+        "appContentClass": 'p-0',
+        "profile": profile,
     }
-    profile = None
-
-    # Handle email search
-    search_email = request.GET.get('search_email')
-    if search_email:
-        try:
-            profile = Profile.objects.get(email=search_email)
-            # Ensure the birth_date is in 'YYYY-MM-DD' format for the date input field
-            if profile.birth_date:
-                profile.birth_date = profile.birth_date.strftime('%Y-%m-%d')
-            context['profile'] = profile
-        except Profile.DoesNotExist:
-            messages.error(request, "No profile found for the given email.")
-
-    # Handle profile update
-    if request.method == 'POST' and 'update' in request.POST:
-        email = request.POST['email']
-        profile = get_object_or_404(Profile, email=email)
-
-        profile.name = request.POST['name']
-        profile.password = request.POST['password']
-        profile.country = request.POST['country']
-        profile.gender = request.POST['gender']
-        profile.birth_date = request.POST['birth_date']  # Django auto-handles date conversion
-
-        profile.save()
-        messages.success(request, "Profile updated successfully!")
-        return redirect('DjangoHUDApp:profileupdate')
-
-    # Handle profile deletion
-    if request.method == 'POST' and 'delete' in request.POST:
-        email = request.POST['email']
-        profile = get_object_or_404(Profile, email=email)
-
-        profile.delete()
-        messages.success(request, "Profile deleted successfully!")
-        return redirect('DjangoHUDApp:profileupdate')
-
     return render(request, 'pages/profile-update.html', context)
 
 
