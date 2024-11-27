@@ -57,21 +57,23 @@
 
 
 			<div class="ms-3">
-				{% if request.session.user_id %}
-					<a href="{% url 'DjangoHUDApp:logout' %}" class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap">Logout <i class="fa fa-arrow-left ms-1"></i></a>
+				{% if request.session.email and request.session.jwt_token %}
+					<!-- Logout Button -->
+					<a href="{% url 'DjangoHUDApp:logout' %}" id="logoutBtn" 
+					   class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap">
+						Logout <i class="fa fa-arrow-left ms-1"></i>
+					</a>
 				{% else %}
-					<a href="/page/login/" class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap">LogIn <i class="fa fa-arrow-right ms-1"></i></a>
+					<!-- Login Button -->
+					<a href="{% url 'DjangoHUDApp:pageLogin' %}" class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap" id="loginBtn">
+						LogIn <i class="fa fa-arrow-right ms-1"></i>
+					</a>
 				{% endif %}
 			</div>
-
-			
-
-			
-
-
 			
 			
 			
+	
 		</div>
 	</div>
 	<!-- END #header -->
@@ -207,6 +209,97 @@
         document.querySelectorAll('.ratio').forEach((ratio) => {
             observer.observe(ratio);
         });
+
+
+		// Make sure you're submitting a POST request, not GET
+		const response = await fetch('/page/login/', {
+		    method: 'POST',
+		    headers: {
+		        'Content-Type': 'application/json',
+		        'X-CSRFToken': '{{ csrf_token }}',  // Include CSRF token for protection
+		    },
+		    body: JSON.stringify({
+		        email: email,
+		        password: password
+		    })
+		});
+		
+		
+		// JavaScript code to handle login and logout
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();  // Prevent form from submitting the default way
+
+            // Get form values
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Prepare the data to send in the POST request
+            const credentials = { email: email, password: password };
+
+            try {
+                const response = await fetch('{% url "DjangoHUDApp:pageLogin" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify(credentials),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Save tokens
+                    localStorage.setItem('access_token', data.tokens.access);
+                    localStorage.setItem('refresh_token', data.tokens.refresh);
+
+                    // Show the logout button and redirect to dashboard
+                    document.getElementById('logoutBtn').style.display = 'block';
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Invalid credentials.');
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                alert('An error occurred. Please try again later.');
+            }
+        });
+
+        // Handle Logout
+     document.getElementById('logoutBtn').addEventListener('click', async function(e) {
+        e.preventDefault();  // Prevent the default link behavior
+
+        try {
+            const response = await fetch('/logout/', {
+                method: 'POST',  // Send a POST request to logout
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',  // Include CSRF token
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Clear tokens from localStorage
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+
+                // Redirect to the landing page after successful logout
+                window.location.href = '/';  // Modify this URL as per your app's flow
+            } else {
+                alert(data.message || 'Logout failed. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+            alert('An error occurred. Please try again later.');
+        }
+		});
+
+		// Login JavaScript (same as before for handling login with JWT)
+		document.getElementById('loginform').addEventListener('click', function(e) {
+			window.location.href = "/page/login/";  // Redirect to login page on button click
+		});
     </script>
 </div>
 
@@ -1168,5 +1261,74 @@
 			</div>
 		</div>
 	</div>
-	<!-- END #footer -->
+	
+
+<!-- landing.html -->
+<!-- landing.html -->
+{% comment %} {% if request.session.email %}
+    <p>Welcome back, {{ request.session.email }}!</p>
+{% else %}
+    <p>Welcome to the Landing Page. Please <a href="{% url 'DjangoHUDApp:pageLogin' %}">Log In</a> to access more features.</p>
+{% endif %}
+
+
+{% if request.session.email %}
+   <!-- Include the inactivity script only for logged-in users -->
+   <script>
+    let inactivityTimeout;
+
+    // Function to handle inactivity and trigger logout
+    function triggerLogout() {
+		alert("you are inactive")
+        const logoutTime = new Date().toISOString(); // Capture the logout time
+        const isAutoLogout = true; // Mark it as auto-logout
+
+        console.log("Auto Logout Time:", logoutTime); // Debug log
+
+        // Send the logout time to the backend
+        fetch("{% url 'DjangoHUDApp:log_inactivity' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                logout_time: logoutTime,  // Current time when the user is logged out
+                auto_logout: isAutoLogout // Indicating this is an inactivity logout
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = "{% url 'DjangoHUDApp:logout' %}";  // Redirect to logout page
+            } else {
+                alert('Failed to log inactivity.');
+            }
+        })
+        .catch(error => {
+            console.error('Error logging inactivity:', error);
+        });
+    }
+
+    // Reset inactivity timeout and set a new timeout when activity is detected
+    function resetInactivityTimeout() {
+        clearTimeout(inactivityTimeout); // Clear the previous timeout
+        inactivityTimeout = setTimeout(triggerLogout, 6000); // Set a 1-minute timeout
+    }
+
+    // Reset inactivity timeout on user activity
+    window.onload = resetInactivityTimeout;
+    document.onmousemove = resetInactivityTimeout;   // Reset timeout on mouse move
+    document.onkeypress = resetInactivityTimeout;   // Reset timeout on key press
+    document.onclick = resetInactivityTimeout;      // Reset timeout on click
+</script>
+
+
+{% endif %} {% endcomment %}
+
+
+
+
+
+	
+	
 {% endblock %}

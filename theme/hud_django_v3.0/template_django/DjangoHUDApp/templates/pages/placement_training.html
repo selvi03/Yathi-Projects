@@ -87,24 +87,66 @@
         margin-right: -15px;
     }
 
-    .table {
-        width: auto;
-        table-layout: auto;
+    table th, table td {
+        padding: 10px; /* Adjust padding to set row height */
+    }
+    
+    table {
+        border-collapse: collapse; /* Ensure borders collapse between cells */
+        width: 100%;
+    }
+    
+    table th {
+        font-weight: bold;
+        text-align:center;
+    }
+    
+    .date-picker {
+        margin-top: 0px !important;
     }
 
-    .date-picker {
-        margin-top: 40px !important;
+    .form-control{
+        border-color:white;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: transparent;
+    }
+    .form-control::placeholder {
+        color: #adaba5; /* Change the placeholder text color */
+        font-weight:bold;
+    }
+    #placement-form input[type="text"],
+    #placement-form input[type="email"],
+    #placement-form input[type="number"],
+    #placement-form input[type="date"],
+    #placement-form input[type="url"],
+    #placement-form textarea {
+        background-color: transparent;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+    #placement-form th {
+        font-weight: bold;
+        color: white; /* Deep white */
+        font-size:17px;
     }
 </style>
 <div class="container mt-5">
-    <h1 class="text-center mb-4 text-theme">Campus Training</h1>
+    <h1 class="text-center mb-4 text-theme">Placement Training</h1>
     <div id="message" style="margin-top: 20px; display:none;"></div>
     <!-- Add a form around the search input to submit the query -->
     <form method="GET" action="{% url 'DjangoHUDApp:placement_training' %}" id="search-form">
         <div class="input-group mb-3">
-            <input type="text" id="searchInput" name="q" value="{{ query }}" class="form-control" placeholder="Search by organization name, SPOC, etc." aria-label="Search">
+            <input type="text" id="searchInput" name="q" value="{{ query }}" class="form-control" placeholder="Search..." aria-label="Search">
         </div>
     </form>
+    <div id="loadingMessage" style="display: none; color: var(--bs-theme); font-weight: bold; text-align: center; font-size:18px;">
+        Please wait, your information is updating...
+    </div>
     <div class="card h-100">
         <div class="card-arrow">
             <div class="card-arrow-top-left"></div>
@@ -117,7 +159,7 @@
             <form id="placement-form" action="{% url 'DjangoHUDApp:placement_training' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                <table class="table table-bordered">
+                <table id="dataTable" class="table table-bordered">
                     <thead>
                         <tr>
                             <th>Organization Name</th>
@@ -141,22 +183,22 @@
                     <tbody id="table-body">
                         {% for item in data %}
                         <tr class="hover-row" data-id="{{ item.id }}">
-                            <td contenteditable="true">{{ item.org_name }}</td>
-                            <td contenteditable="true">{{ item.spoc_name }}</td>
-                            <td contenteditable="true">{{ item.designation }}</td>
-                            <td contenteditable="true">{{ item.phone_no }}</td>
-                            <td contenteditable="true">{{ item.email }}</td>
-                            <td contenteditable="true">{{ item.address }}</td>
-                            <td contenteditable="true">{{ item.location }}</td>
-                            <td contenteditable="true">{{ item.website }}</td>
-                            <td>{{ item.get_source_data_display }}</td>
-                            <td>{{ item.get_status_display }}</td>
-                            <td>{{ item.get_feedback_display }}</td>
-                            <td contenteditable="true">{{ item.remark }}</td>
-                            <td contenteditable="true">{{ item.reference }}</td>
-                            <td>{{ item.callback_date }}</td>
-                            <td>{{ item.initiated_date }}</td>
-                            <td>{{ item.followup_date }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="0">{{ item.org_name }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="1">{{ item.spoc_name }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="2">{{ item.designation }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="3">{{ item.phone_no }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="4">{{ item.email }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="5">{{ item.address }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="6">{{ item.location }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="7">{{ item.website }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="8">{{ item.get_source_data_display }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="9">{{ item.get_status_display }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="10">{{ item.get_feedback_display }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="11">{{ item.remark }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="12">{{ item.reference }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="13">{{ item.callback_date }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="14">{{ item.initiated_date }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="15">{{ item.followup_date }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -189,30 +231,29 @@
                         </tr>
                         <tr>
                             <td colspan="17" class="text-right">
-                                <button type="submit" class="btn btn-outline-theme">Submit</button>
+                                <button type="submit" class="btn btn-outline-theme" style="font-weight:bold; padding:8px 58px; font-size:18px;">Submit</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
-                <!-- Bottom Navigation Tabs -->
-                <div class="nav nav-tabs">
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-1" href="/organization-data/">Campus Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-2" href="/training-data/">Lateral Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-3" href="/corporate_training/">Corporate Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link active text-theme outline-theme" id="tab-4" href="/placement-training/">Placement Training</a>
-                    </div>
-                    <!-- Add more tabs as needed -->
-                </div>
             </form>
         </div>
     </div>
+    <!-- Bottom Navigation Tabs 
+    <div class="nav nav-tabs">
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-1" href="/organization-data/" style="font-weight:bold;">Campus Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-2" href="/training-data/" style="font-weight:bold;">Lateral Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-3" href="/corporate_training/" style="font-weight:bold;">Corporate Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link active text-theme outline-theme" id="tab-4" href="/placement-training/" style="font-weight:bold; box-shadow: 2px 2px 5px #a6a49f;">Placement Training</a>
+        </div>
+    </div>-->
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -226,26 +267,26 @@
         const followupDateInput = document.getElementById("followup_date");
         const searchInput = document.getElementById("searchInput");
         const tableBody = document.getElementById("table-body");
-
-        const requiredFields = [
-            'org_name', 'spoc_name', 'designation', 'phone_no', 'email', 
-            'address', 'location', 'website', 'source_data', 'status', 
-            'feedback', 'remark', 'reference'
-        ];
-
+        const tableRows = Array.from(tableBody.querySelectorAll("tr"));
+        const tableHeaders = Array.from(document.querySelectorAll("th"));
+    
+        // Track sorting directions for each column (false = ascending, true = descending)
+        let sortDirections = new Array(tableHeaders.length).fill(false);
+        let lastSortedColumnIndex = null;  // Track the last sorted column
+    
         // Initialize flatpickr date pickers
         flatpickr([callbackDateInput, initiatedDateInput, followupDateInput], {
             enableTime: true,
             dateFormat: "Y-m-d H:i",
         });
-
+    
         // Toggle visibility of date pickers based on status
         function toggleDatePicker() {
             const selectedStatus = statusDropdown.value;
             callbackDateInput.style.display = "none";
             initiatedDateInput.style.display = "none";
             followupDateInput.style.display = "none";
-
+    
             if (selectedStatus === "callback") {
                 callbackDateInput.style.display = "block";
             } else if (selectedStatus === "initiated") {
@@ -254,76 +295,11 @@
                 followupDateInput.style.display = "block";
             }
         }
-
+    
         statusDropdown.addEventListener("change", toggleDatePicker);
         toggleDatePicker(); // Call on load to set initial visibility
-
-        // Display message
-        function displayMessage(text, type) {
-            messageDiv.innerText = text;
-            messageDiv.className = type;
-            messageDiv.style.display = 'block';
-        }
-
-        // Auto-save function
-        function autoSave(updatedData, id) {
-            console.log("Auto-saving data:", updatedData, "for ID:", id);
-
-            const missingFields = requiredFields.filter(field => !updatedData[field]);
-            if (missingFields.length > 0) {
-                displayMessage("Please fill out all required fields: " + missingFields.join(", "), "error");
-                return;
-            }
-
-            $.ajax({
-                type: 'POST',
-                url: `/DjangoHUDApp/placement_training/`,
-                data: JSON.stringify(updatedData),
-                contentType: 'application/json',
-                headers: { "X-CSRFToken": csrfToken },
-                success: function(response) {
-                    if (response.success) {
-                        displayMessage("Data updated successfully!", "success");
-                    } else {
-                        displayMessage("Failed to update: " + (response.message || "Unknown error"), "error");
-                    }
-                },
-                error: function(xhr) {
-                    displayMessage("An error occurred during update: " + xhr.statusText, "error");
-                }
-            });
-        }
-
-        // Handle update button click
-        document.querySelectorAll('.update-btn').forEach(button => {
-            button.addEventListener('click', function () {
-                const row = this.closest('tr');
-                const id = row.getAttribute('data-id');
-
-                const updatedData = {
-                    org_name: row.querySelector("[name='org_name']").innerText,
-                    spoc_name: row.querySelector("[name='spoc_name']").innerText,
-                    designation: row.querySelector("[name='designation']").innerText,
-                    phone_no: row.querySelector("[name='phone_no']").innerText,
-                    email: row.querySelector("[name='email']").innerText,
-                    address: row.querySelector("[name='address']").innerText,
-                    location: row.querySelector("[name='location']").innerText,
-                    website: row.querySelector("[name='website']").innerText,
-                    status: row.querySelector("[name='status']").value,
-                    source_data: row.querySelector("[name='source_data']").value,
-                    feedback: row.querySelector("[name='feedback']").value,
-                    remark: row.querySelector("[name='remark']").innerText,
-                    reference: row.querySelector("[name='reference']").innerText,
-                    callback_date: statusDropdown.value === 'callback' ? callbackDateInput.value : null,
-                    initiated_date: statusDropdown.value === 'initiated' ? initiatedDateInput.value : null,
-                    followup_date: statusDropdown.value === 'follow_up' ? followupDateInput.value : null
-                };
-
-                autoSave(updatedData, id);
-            });
-        });
-
-        // Update table rows
+    
+        // Function to update table rows
         function updateTable(rows) {
             tableBody.innerHTML = "";
             if (rows.length > 0) {
@@ -334,22 +310,153 @@
                 tableBody.appendChild(noDataRow);
             }
         }
-
-        // Filter table rows
-        searchInput.addEventListener("input", function() {
-            const query = searchInput.value.toLowerCase().trim();
-            if (query === "") {
-                location.reload();
-                return;
-            }
-
+    
+        // Function for sorting table dynamically by column with reverse toggle
+        function sortTable(columnIndex) {
             const rows = Array.from(tableBody.querySelectorAll("tr"));
-            const filteredRows = rows.filter(row => {
-                return Array.from(row.cells).some(cell => cell.textContent.toLowerCase().includes(query));
+            const reverse = sortDirections[columnIndex];  // Check if current column is sorted in reverse order
+    
+            const sortedRows = rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].textContent.trim().toLowerCase();
+                const cellB = b.cells[columnIndex].textContent.trim().toLowerCase();
+    
+                if (cellA < cellB) return reverse ? 1 : -1;
+                if (cellA > cellB) return reverse ? -1 : 1;
+                return 0;
             });
-
+    
+            updateTable(sortedRows);
+    
+            // Toggle sorting direction for the column
+            sortDirections[columnIndex] = !reverse;
+            lastSortedColumnIndex = columnIndex;  // Store the last sorted column
+        }
+    
+        // Event listener for column sorting
+        tableHeaders.forEach((th, index) => {
+            th.addEventListener("click", function () {
+                sortTable(index);  // Sort based on the clicked column
+            });
+        });
+    
+        // Function for filtering and sorting table rows based on search input
+        function filterTable() {
+            const input = searchInput.value.toLowerCase().trim();
+            let filteredRows;
+    
+            if (input === "") {
+                // If search bar is empty, reset the table to show all rows, sorted if needed
+                filteredRows = tableRows;
+            } else {
+                // Filter rows based on search input
+                filteredRows = tableRows.filter(row => {
+                    const rowText = Array.from(row.cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+                    return rowText.includes(input);
+                });
+            }
+    
+            // Update the table with filtered rows
             updateTable(filteredRows);
+    
+            // Apply sorting to the filtered results based on the last sorted column, if any
+            if (lastSortedColumnIndex !== null) {
+                const reverse = sortDirections[lastSortedColumnIndex];
+                filteredRows.sort((a, b) => {
+                    const cellA = a.cells[lastSortedColumnIndex].textContent.trim().toLowerCase();
+                    const cellB = b.cells[lastSortedColumnIndex].textContent.trim().toLowerCase();
+    
+                    if (cellA < cellB) return reverse ? 1 : -1;
+                    if (cellA > cellB) return reverse ? -1 : 1;
+                    return 0;
+                });
+                updateTable(filteredRows);
+            }
+        }
+    
+        // Filter and sort table rows when typing in the search bar
+        searchInput.addEventListener("input", filterTable);
+    });
+
+    //-----------------------  Auto Update -------------------------
+    document.querySelectorAll('#dataTable td[contenteditable="true"]').forEach(cell => {
+        cell.addEventListener('blur', function () {
+            // Get the updated value
+            const value = this.innerText;
+            let rowIndex = this.dataset.row; // Use dataset to retrieve row index
+            let colIndex = this.dataset.col; // Use dataset to retrieve column index
+    
+            // Ensure rowIndex and colIndex are integers
+            rowIndex = parseInt(rowIndex);  
+            colIndex = parseInt(colIndex);
+            
+            // Log row and column indexes to help debug
+            console.log(`rowIndex: ${rowIndex}, colIndex: ${colIndex}, value: ${value}`);
+    
+            // Show the loading message before making the request
+            document.getElementById('loadingMessage').style.display = 'block';
+    
+            // Send auto-save request
+            fetch('/placement-training/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure CSRF token is sent
+                },
+                body: JSON.stringify({ row_index: rowIndex, col_index: colIndex, value: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the table with the latest data
+                    const tableBody = document.querySelector('#dataTable tbody');
+                    tableBody.innerHTML = ''; // Clear current rows
+    
+                    // Render rows with updated data
+                    data.data.forEach((row, rowIndex) => {
+                        const tr = document.createElement('tr');
+                        row.forEach((cellValue, colIndex) => {
+                            const td = document.createElement('td');
+                            td.contentEditable = true;
+                            td.dataset.row = rowIndex; // Store row index in data attribute
+                            td.dataset.col = colIndex; // Store column index in data attribute
+                            td.innerText = cellValue;
+                            tr.appendChild(td);
+                        });
+                        tableBody.appendChild(tr);
+                    });
+    
+                    // Optionally, reload the page to refresh the table and other data
+                    location.reload(); // You can comment this out if not needed
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error auto-saving data:', error);
+            })
+            .finally(() => {
+                // Hide the loading message after the request is complete
+                document.getElementById('loadingMessage').style.display = 'none';
+            });
         });
     });
+    
+    // Function to retrieve CSRF token for safe requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
 </script>
 {% endblock %} 

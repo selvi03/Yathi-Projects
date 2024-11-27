@@ -60,6 +60,7 @@
 				<div class="menu-icon"><i class="bi bi-search nav-icon"></i></div>
 			</a>
 		</div>
+
 		<div class="menu-item dropdown dropdown-mobile-full">
 			<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 				<div class="menu-icon"><i class="bi bi-grid-3x3-gap nav-icon"></i></div>
@@ -113,6 +114,7 @@
 				</div>
 			</div>
 		</div>
+
 		<div class="menu-item dropdown dropdown-mobile-full">
 			<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 				<div class="menu-icon"><i class="bi bi-bell nav-icon"></i></div>
@@ -203,7 +205,29 @@
 				<div class="dropdown-divider"></div>
 				<a class="dropdown-item d-flex align-items-center" href="/page/login">LOGOUT <i class="bi bi-toggle-off ms-auto text-theme fs-16px my-n1"></i></a>
 			</div>
+
+
+			
 		</div>
+
+
+
+		<div class="ms-3" style="position: absolute; right: 20px;"> 
+			{% if request.session.email and request.session.jwt_token %}
+				<!-- Logout Button -->
+				<a href="{% url 'DjangoHUDApp:logout' %}" id="logoutBtn" 
+				   class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap">
+					Logout <i class="fa fa-arrow-left ms-1"></i>
+				</a>
+			{% else %}
+				<!-- Login Button -->
+				<a href="{% url 'DjangoHUDApp:pageLogin' %}" class="btn btn-outline-theme btn-sm fw-semibold text-uppercase px-2 py-1 fs-10px text-nowrap" id="loginBtn">
+					LogIn <i class="fa fa-arrow-right ms-1"></i>
+				</a>
+			{% endif %}
+		</div>
+		
+
 	</div>
 	<!-- END menu -->
 	

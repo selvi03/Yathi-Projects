@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.core.validators import RegexValidator
+from django.contrib.auth.hashers import make_password
+
 
 class OrganizationDataAlt(models.Model):
     SOURCE_DATA_CHOICES = [
@@ -35,14 +37,14 @@ class OrganizationDataAlt(models.Model):
     designation = models.CharField(max_length=255)
     phone_no = models.CharField(max_length=10,unique=True, validators=[RegexValidator(r'^[6-9]\d{9}$', 'Phone number must be 10 digits and start with 6, 7, 8, or 9.')])
     email = models.EmailField(unique=True)
-    address = models.TextField()
+    address = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     website = models.URLField()
     source_data = models.CharField(max_length=255, choices=SOURCE_DATA_CHOICES)
     status = models.CharField(max_length=255, choices=STATUS_CHOICES)
     feedback = models.CharField(max_length=255, choices=FEEDBACK_CHOICES)
-    remark = models.TextField()
-    reference = models.TextField()
+    remark = models.CharField(max_length=255)
+    reference = models.CharField(max_length=255)
     callback_date = models.DateTimeField(null=True, blank=True)
     initiated_date = models.DateTimeField(null=True, blank=True)
     followup_date = models.DateTimeField(null=True, blank=True)
@@ -87,14 +89,14 @@ class PlacementTraining(models.Model):
     designation = models.CharField(max_length=255)
     phone_no = models.CharField(max_length=10, validators=[RegexValidator(r'^[6-9]\d{9}$', 'Phone number must be 10 digits and start with 6, 7, 8, or 9.')],unique=True)
     email = models.EmailField(unique=True)
-    address = models.TextField()
+    address = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     website = models.URLField()
     source_data = models.CharField(max_length=255, choices=SOURCE_DATA_CHOICES)
     status = models.CharField(max_length=255, choices=STATUS_CHOICES)
     feedback = models.CharField(max_length=255, choices=FEEDBACK_CHOICES)
-    remark = models.TextField()
-    reference = models.TextField()
+    remark = models.CharField(max_length=255)
+    reference = models.CharField(max_length=255)
     callback_date = models.DateTimeField(null=True, blank=True)
     initiated_date = models.DateTimeField(null=True, blank=True)
     followup_date = models.DateTimeField(null=True, blank=True)
@@ -121,7 +123,7 @@ class TrainingData(models.Model):
     duration = models.CharField(max_length=50)
     location = models.CharField(max_length=255)
     feedback = models.TextField(max_length=200, choices=FEEDBACK_CHOICES)
-    remarks = models.TextField()
+    remarks = models.CharField(max_length=255)
     reference = models.CharField(max_length=255)
 
     def __str__(self):
@@ -151,13 +153,12 @@ class CorporateTraining(models.Model):
         return self.course_name  # This will be displayed in the admin
 
 class Profile(models.Model):
-    
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)
     gender = models.CharField(max_length=10)
     birth_date = models.DateField()
-    mobile_number = models.CharField(max_length=15)
+    mobile_number = models.CharField(max_length=15, blank=True, null=True)
     college_name = models.CharField(max_length=100)
     id_number = models.CharField(max_length=50)
     batch_number = models.CharField(max_length=50)
@@ -166,7 +167,7 @@ class Profile(models.Model):
     state = models.CharField(max_length=100)
     country = models.CharField(max_length=50)
     qualification = models.CharField(max_length=100)
-    experience = models.PositiveIntegerField()
+    role = models.CharField(max_length=100,default="User")
     language = models.CharField(max_length=20)
     skills = models.CharField(max_length=20)
     locations = models.CharField(max_length=100)
@@ -180,6 +181,7 @@ class Profile(models.Model):
     certificate = models.FileField(upload_to='certificates/', blank=True, null=True)
     ready_to_relocate = models.BooleanField(default=False)
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
+    experience = models.PositiveIntegerField()
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('$'):  # Hash password if it's plain text

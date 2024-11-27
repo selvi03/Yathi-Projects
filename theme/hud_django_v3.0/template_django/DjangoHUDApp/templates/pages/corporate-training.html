@@ -14,113 +14,134 @@
 
 {% block content %}
 <style>
-    /* Change dropdown text color to black */
     select {
-        color: black !important; /* Changes the text color of dropdown options */
+        color: black !important;
         background-color: white !important;
     }
 
-    #callback-date-picker {
-        width: 100%; /* Make the date picker match table cell width */
-        display: none; /* Initially hide the date picker */
-        margin-top: 20px; /* Adjust margin for spacing */
-        background-color: #a52a2a; /* Change background color */
-        border: 1px solid #a52a2a; /* Change border color */
-        color: black !important; /* Change text color */
-        padding: 8px;
-    }
-
-    #initiated-date-picker {
-        width: 100%; /* Make the date picker match table cell width */
-        display: none; /* Initially hide the date picker */
-        margin-top: 20px; /* Adjust margin for spacing */
-        background-color: #a52a2a; /* Change background color */
-        border: 1px solid #a52a2a; /* Change border color */
-        color: black !important; /* Change text color */
-        padding: 8px;
-    }
-
-    #followup-date-picker {
-        width: 100%; /* Make the date picker match table cell width */
-        display: none; /* Initially hide the date picker */
-        margin-top: 20px; /* Adjust margin for spacing */
-        background-color: #a52a2a; /* Change background color */
-        border: 1px solid #a52a2a; /* Change border color */
-        color: black !important; /* Change text color */
-        padding: 8px;
-    }
-
-    .dropdown-black {
-        color: black; /* Changes the text color of dropdown options */
+    .update-btn {
+        margin-right: 10px;
     }
 
     .card {
         position: relative;
-        border: 2px solid transparent; /* Set border to transparent */
+        border: 2px solid transparent;
         overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow effect */
-        margin: 30px 0; /* Add vertical margin space */
-        padding: 20px; /* Add padding inside the card */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin: 30px 0;
+        padding: 20px;
     }
 
     .card-arrow {
         position: absolute;
     }
 
-    .card-arrow-top-left {
-        border-width: 0 10px 10px 0; /* Triangle left */
+    .card-arrow-top-left,
+    .card-arrow-top-right,
+    .card-arrow-bottom-left,
+    .card-arrow-bottom-right {
         border-style: solid;
-        border-color: transparent transparent transparent transparent; /* Arrow color */
-        top: -10px; /* Adjust position */
-        left: -10px; /* Adjust position */
+        border-color: transparent;
+    }
+
+    .card-arrow-top-left {
+        border-width: 0 10px 10px 0;
+        top: -10px;
+        left: -10px;
     }
 
     .card-arrow-top-right {
-        border-width: 0 0 10px 10px; /* Triangle right */
-        border-style: solid;
-        border-color: transparent transparent transparent transparent; /* Arrow color */
-        top: -10px; /* Adjust position */
-        right: -10px; /* Adjust position */
+        border-width: 0 0 10px 10px;
+        top: -10px;
+        right: -10px;
     }
 
     .card-arrow-bottom-left {
-        border-width: 10px 10px 0 0; /* Triangle left */
-        border-style: solid;
-        border-color: transparent transparent transparent transparent; /* Arrow color */
-        bottom: -10px; /* Adjust position */
-        left: -10px; /* Adjust position */
+        border-width: 10px 10px 0 0;
+        bottom: -10px;
+        left: -10px;
     }
 
     .card-arrow-bottom-right {
-        border-width: 10px 0 0 10px; /* Triangle right */
-        border-style: solid;
-        border-color: transparent transparent transparent transparent; /* Arrow color */
-        bottom: -10px; /* Adjust position */
-        right: -10px; /* Adjust position */
+        border-width: 10px 0 0 10px;
+        bottom: -10px;
+        right: -10px;
     }
 
-    .hidden-column {
-        display: none; /* Hide the column */
+    .date-picker,
+    .date-time-column {
+        display: none;
+    }
+
+    .date-time-picker {
+        width: 100%;
+        margin-top: 20px;
+        background-color: #a52a2a;
+        border: 1px solid #a52a2a;
+        color: black !important;
+        padding: 8px;
     }
 
     .table-responsive {
-        overflow-x: auto; /* Allow horizontal scrolling if the table overflows */
-        margin-right: -15px; /* Remove right margin to move the table closer to the right side */
+        overflow-x: auto;
+        margin-right: -15px;
     }
 
-    .table {
-        width: auto; /* Set table width to auto to prevent it from stretching */
-        table-layout: auto; /* Allow the table to resize based on content */
+    table th, table td {
+        padding: 10px; /* Adjust padding to set row height */
     }
-
+    
+    table {
+        border-collapse: collapse; /* Ensure borders collapse between cells */
+        width: 100%;
+    }
+    
+    table th {
+        font-weight: bold;
+        text-align:center;
+    }
+    
     .date-picker {
-        margin-top: 40px !important; /* Add gap between date picker and status dropdown */
+        margin-top: 0px !important;
+    }
+
+    .search-bar{
+        border-color:white;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: transparent;
+    }
+    .search-bar::placeholder {
+        color: #adaba5; /* Change the placeholder text color */
+        font-weight:bold;
+    }
+    #corporate-form input[type="text"],
+    #corporate-form input[type="email"],
+    #corporate-form input[type="number"],
+    #corporate-form input[type="date"],
+    #corporate-form input[type="url"],
+    #corporate-form textarea {
+        background-color: transparent;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+    #corporate-form th {
+        font-weight: bold;
+        color: white; /* Deep white */
+        font-size:17px;
     }
 </style>
-
 <div class="container mt-5">
     <h1 class="text-center mb-4 text-theme">Corporate Training</h1>
-
+    <!-- Search Bar -->
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search..." onkeyup="filterTable()">
+    <div id="loadingMessage" style="display: none; color: var(--bs-theme); font-weight: bold; text-align: center; font-size:18px;">
+        Please wait, your information is updating...
+    </div>
     <div class="card h-100">
         <div class="card-arrow">
             <div class="card-arrow-top-left"></div>
@@ -130,9 +151,9 @@
         </div>
 
         <div class="table-responsive">
-            <form method="POST">
+            <form method="POST" id="corporate-form">
                 {% csrf_token %}
-                <table class="table table-bordered">
+                <table id="dataTable" class="table table-bordered">
                     <thead>
                         <tr>
                             <th>Course Name</th>
@@ -145,18 +166,18 @@
                             <th>Feedback</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tableBody">
                         <!-- Display Existing Data -->
                         {% for item in data %}
                         <tr>
-                            <td>{{ item.course_name }}</td>
-                            <td>{{ item.trainer_name }}</td>
-                            <td>{{ item.date }}</td>
-                            <td>{{ item.duration }}</td>
-                            <td>{{ item.location }}</td>
-                            <td>{{ item.participants_count }}</td>
-                            <td>{{ item.cost }}</td>
-                            <td>{{ item.feedback }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="0">{{ item.course_name }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="1">{{ item.trainer_name }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="2">{{ item.date }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="3">{{ item.duration }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="4">{{ item.location }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="5">{{ item.participants_count }}</td>
+                            <td contenteditable="true" data-row="{{ forloop.counter0 }}" data-col="6">{{ item.cost }}</td>
+                            <td data-row="{{ forloop.counter0 }}" data-col="7">{{ item.feedback }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -179,29 +200,194 @@
                         <!-- Add Data Button -->
                         <tr>
                             <td colspan="8" class="text-right">
-                                <button type="submit" class="btn btn-outline-theme">Add Data</button>
+                                <button type="submit" class="btn btn-outline-theme" style="font-weight:bold; padding:8px 58px; font-size:18px;">Submit</button>
                             </td>
                         </tr>
                     </tbody>
                 </table>
-                <!-- Bottom Navigation Tabs -->
-                <div class="nav nav-tabs">
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-1" href="/organization-data/">Campus Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-2" href="/training-data/">Lateral Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link active text-theme outline-theme" id="tab-3" href="/corporate_training/">Corporate Training</a>
-                    </div>
-                    <div class="nav-item">
-                        <a class="nav-link text-theme outline-theme" id="tab-4" href="/placement-training/">Placement Training</a>
-                    </div>
-                    <!-- Add more tabs as needed -->
-                </div>
             </form>
         </div>
     </div>
+    <!-- Bottom Navigation Tabs 
+    <div class="nav nav-tabs">
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-1" href="/organization-data/" style="font-weight:bold;">Campus Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-2" href="/training-data/" style="font-weight:bold;">Lateral Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link active text-theme outline-theme" id="tab-3" href="/corporate_training/" style="font-weight:bold; box-shadow: 2px 2px 5px #a6a49f;">Corporate Training</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link text-theme outline-theme" id="tab-4" href="/placement-training/" style="font-weight:bold;">Placement Training</a>
+        </div>
+    </div>-->
 </div>
+
+<script>
+    // Ensure these elements are referenced correctly
+    const tableBody = document.querySelector("#tableBody"); // Reference to the table body element
+    const tableHeaders = Array.from(document.querySelectorAll("th")); // Reference to table headers (for sorting)
+    const searchInput = document.querySelector("#searchInput"); // Reference to the search input
+    let tableRows = Array.from(tableBody.querySelectorAll("tr")); // All rows of the table
+    let lastSortedColumnIndex = null; // Keep track of the last sorted column index
+    let sortDirections = Array(tableHeaders.length).fill(true); // Track sorting directions, default to ascending for all columns
+
+    // Function for sorting table dynamically by column with reverse toggle
+    function sortTable(columnIndex) {
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+        const reverse = sortDirections[columnIndex];  // Check if current column is sorted in reverse order
+
+        const sortedRows = rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim().toLowerCase();
+            const cellB = b.cells[columnIndex].textContent.trim().toLowerCase();
+
+            if (cellA < cellB) return reverse ? 1 : -1;
+            if (cellA > cellB) return reverse ? -1 : 1;
+            return 0;
+        });
+
+        updateTable(sortedRows);  // Update table with sorted rows
+
+        // Toggle sorting direction for the column
+        sortDirections[columnIndex] = !reverse;
+        lastSortedColumnIndex = columnIndex;  // Store the last sorted column
+    }
+
+    // Event listener for column sorting
+    tableHeaders.forEach((th, index) => {
+        th.addEventListener("click", function () {
+            sortTable(index);  // Sort based on the clicked column
+        });
+    });
+
+    // Function for updating the table with new rows
+    function updateTable(sortedRows) {
+        tableBody.innerHTML = ""; // Clear current table rows
+        sortedRows.forEach(row => {
+            tableBody.appendChild(row);  // Append sorted row to the table body
+        });
+    }
+
+    // Function for filtering and sorting table rows based on search input
+    function filterTable() {
+        const input = searchInput.value.toLowerCase().trim();
+        let filteredRows;
+
+        if (input === "") {
+            // If search bar is empty, reset the table to show all rows, sorted if needed
+            filteredRows = tableRows;
+        } else {
+            // Filter rows based on search input
+            filteredRows = tableRows.filter(row => {
+                const rowText = Array.from(row.cells).map(cell => cell.textContent.toLowerCase()).join(" ");
+                return rowText.includes(input);
+            });
+        }
+
+        // Update the table with filtered rows
+        updateTable(filteredRows);
+
+        // Apply sorting to the filtered results based on the last sorted column, if any
+        if (lastSortedColumnIndex !== null) {
+            const reverse = sortDirections[lastSortedColumnIndex];
+            filteredRows.sort((a, b) => {
+                const cellA = a.cells[lastSortedColumnIndex].textContent.trim().toLowerCase();
+                const cellB = b.cells[lastSortedColumnIndex].textContent.trim().toLowerCase();
+
+                if (cellA < cellB) return reverse ? 1 : -1;
+                if (cellA > cellB) return reverse ? -1 : 1;
+                return 0;
+            });
+            updateTable(filteredRows);  // Update table with sorted and filtered rows
+        }
+    }
+
+    // Filter and sort table rows when typing in the search bar
+    searchInput.addEventListener("input", filterTable);
+
+    //-----------------------  Auto Update -------------------------
+    document.querySelectorAll('#dataTable td[contenteditable="true"]').forEach(cell => {
+        cell.addEventListener('blur', function () {
+            // Get the updated value
+            const value = this.innerText;
+            let rowIndex = this.dataset.row; // Use dataset to retrieve row index
+            let colIndex = this.dataset.col; // Use dataset to retrieve column index
+    
+            // Ensure rowIndex and colIndex are integers
+            rowIndex = parseInt(rowIndex);  
+            colIndex = parseInt(colIndex);
+            
+            // Log row and column indexes to help debug
+            console.log(`rowIndex: ${rowIndex}, colIndex: ${colIndex}, value: ${value}`);
+    
+            // Show the loading message before making the request
+            document.getElementById('loadingMessage').style.display = 'block';
+    
+            // Send auto-save request
+            fetch('/corporate_training/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure CSRF token is sent
+                },
+                body: JSON.stringify({ row_index: rowIndex, col_index: colIndex, value: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the table with the latest data
+                    const tableBody = document.querySelector('#dataTable tbody');
+                    tableBody.innerHTML = ''; // Clear current rows
+    
+                    // Render rows with updated data
+                    data.data.forEach((row, rowIndex) => {
+                        const tr = document.createElement('tr');
+                        row.forEach((cellValue, colIndex) => {
+                            const td = document.createElement('td');
+                            td.contentEditable = true;
+                            td.dataset.row = rowIndex; // Store row index in data attribute
+                            td.dataset.col = colIndex; // Store column index in data attribute
+                            td.innerText = cellValue;
+                            tr.appendChild(td);
+                        });
+                        tableBody.appendChild(tr);
+                    });
+    
+                    // Optionally, reload the page to refresh the table and other data
+                    location.reload(); // You can comment this out if not needed
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error auto-saving data:', error);
+            })
+            .finally(() => {
+                // Hide the loading message after the request is complete
+                document.getElementById('loadingMessage').style.display = 'none';
+            });
+        });
+    });
+    
+    // Function to retrieve CSRF token for safe requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+
 {% endblock %}

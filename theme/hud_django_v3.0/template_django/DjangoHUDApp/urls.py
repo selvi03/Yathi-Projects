@@ -1,6 +1,12 @@
 from django.urls import path
 from . import views
-
+from django.conf import settings
+from django.conf.urls.static import static
+from django.urls import path
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 app_name = 'DjangoHUDApp'
 urlpatterns = [
     path('organization-data/', views.organization_data_list, name='organization-data-list'),
@@ -9,18 +15,20 @@ urlpatterns = [
     path('placement-training/', views.placement_training_view, name='placement_training'),
     path('', views.landing, name='landing'),
     path('page/login/', views.pageLogin, name='pageLogin'),
+    path('logout/', views.logout, name='logout'),
+    path('log_inactivity/', views.log_inactivity, name='log_inactivity'),
     # path('page/register/', views.pageRegister, name='pageRegister'),
 
-    path('logout/', views.logout, name='logout'),
     path('page/admin/', views.pageadmin, name='pageAdmin'),
+    
 
 
     path('profile/', views.profile, name='profile'),
     path('profile/add/', views.profileadd, name='profileadd'),
     path('profile/update/', views.profileupdate, name='profileupdate'),
-    path('profile/delete/', views.profiledelete, name='profiledelete'),
+    # path('profile/delete/', views.profiledelete, name='profiledelete'),
 
-   
+
 
 
 
@@ -84,4 +92,6 @@ urlpatterns = [
     path('calendar/', views.calendar, name='calendar'),
     path('settings/', views.settings, name='settings'),
     path('helper/', views.helper, name='helper')
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+

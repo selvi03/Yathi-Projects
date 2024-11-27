@@ -20,10 +20,11 @@ class OrganizationDataForm(forms.ModelForm):
     class Meta:
         model = OrganizationDataAlt
         fields = [
-            'org_name', 'spoc_name', 'designation', 'phone_no', 'email', 
-            'address', 'location', 'website', 'source_data', 'status', 
-            'feedback', 'remark', 'reference','callback_date','initiated_date','followup_date'
+            'org_name', 'spoc_name', 'designation', 'phone_no', 'email',
+            'address', 'location', 'website', 'source_data', 'status', 'feedback',
+            'remark', 'reference', 'callback_date', 'initiated_date', 'followup_date'
         ]
+
         widgets = {
             'callback_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'initiated_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
@@ -62,8 +63,6 @@ class TrainingDataForm(forms.ModelForm):
     }),
 }
         
-
-
 class CorporateTrainingForm(forms.ModelForm):
     class Meta:
         model = CorporateTraining
@@ -83,14 +82,16 @@ class CorporateTrainingForm(forms.ModelForm):
 }
 
 
+
+
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = [
             'name', 'email', 'password', 'gender', 'birth_date', 'mobile_number', 'college_name',
-            'id_number', 'batch_number', 'city', 'address', 'state', 'country', 'qualification',
-            'experience', 'language', 'skills', 'locations', 'bank_name', 'branch_name', 'ifsc_code',
-            'account_number', 'pan_number', 'gst_number', 'photo', 'certificate', 'resume', 'ready_to_relocate'
+            'id_number', 'batch_number', 'city', 'address', 'state', 'country', 'qualification','role',
+            'language', 'skills', 'locations', 'bank_name', 'branch_name', 'ifsc_code',
+            'account_number', 'pan_number', 'gst_number', 'photo', 'certificate', 'resume', 'ready_to_relocate','experience'
         ]
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),
