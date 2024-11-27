@@ -58,34 +58,68 @@
 	<script src="{% static 'js/app.min.js' %}"></script>
 	<!-- ================== END core-js ================== -->
 	
-	<!-- Inactivity detection script -->
-	{% comment %} <script>
-		let timeout; // Declare timeout variable
-		const logout = () => {
-			alert("You have been logged out due to inactivity.");
-			window.location.href = "{% url 'DjangoHUDApp:pageLogin' %}";  // Redirect to login page after logout
-		};
-	
-		const resetTimer = () => {
-			clearTimeout(timeout); // Clear the existing timeout
-			timeout = setTimeout(logout, 60000); // Set timeout to 1 minute (60000 milliseconds)
-	
-			// Optionally, you can make an AJAX call here to update the last activity time in the session
-			fetch("{% url 'DjangoHUDApp:update_last_activity' %}", { method: 'POST', credentials: 'include' });
-		};
-	
-		// Event listeners for user activity
-		document.addEventListener('mousemove', resetTimer);
-		document.addEventListener('keypress', resetTimer);
-		document.addEventListener('click', resetTimer);
-		document.addEventListener('scroll', resetTimer);
-	
-		// Start the timer when the page loads
-		resetTimer();
-	</script> {% endcomment %}
-	
+	{% comment %} {% if request.session.email %}
+    <p>Welcome back, {{ request.session.email }}!</p>
+{% else %}
+    <p>Welcome to the Landing Page. Please <a href="{% url 'DjangoHUDApp:pageLogin' %}">Log In</a> to access more features.</p>
+{% endif %} {% endcomment %}
+
+
+{% if request.session.email %}
+   <!-- Include the inactivity script only for logged-in users -->
+   <script>
+    let inactivityTimeout;
+
+    // Function to handle inactivity and trigger logout
+    function triggerLogout() {
+		alert("you are inactive")
+        const logoutTime = new Date().toISOString(); // Capture the logout time
+        const isAutoLogout = true; // Mark it as auto-logout
+
+        console.log("Auto Logout Time:", logoutTime); // Debug log
+
+        // Send the logout time to the backend
+        fetch("{% url 'DjangoHUDApp:log_inactivity' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                logout_time: logoutTime,  // Current time when the user is logged out
+                auto_logout: isAutoLogout // Indicating this is an inactivity logout
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = "{% url 'DjangoHUDApp:logout' %}";  // Redirect to logout page
+            } else {
+                alert('Failed to log inactivity.');
+            }
+        })
+        .catch(error => {
+            console.error('Error logging inactivity:', error);
+        });
+    }
+
+    // Reset inactivity timeout and set a new timeout when activity is detected
+    function resetInactivityTimeout() {
+        clearTimeout(inactivityTimeout); // Clear the previous timeout
+        inactivityTimeout = setTimeout(triggerLogout, 600000); // Set a 10-minute timeout
+    }
+
+    // Reset inactivity timeout on user activity
+    window.onload = resetInactivityTimeout;
+    document.onmousemove = resetInactivityTimeout;   // Reset timeout on mouse move
+    document.onkeypress = resetInactivityTimeout;   // Reset timeout on key press
+    document.onclick = resetInactivityTimeout;      // Reset timeout on click
+</script>
+
+
+{% endif %}
 	
 
-	{% block js %}{% endblock %}
+	{% block js %}
+	{% endblock %}
 </body>
 </html>
