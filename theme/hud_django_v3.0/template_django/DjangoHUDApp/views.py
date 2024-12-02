@@ -1682,7 +1682,15 @@ def pagePricing(request):
 
 
 def profile(request):
-	return render(request, "pages/profile.html")
+    # Fetch username and email from the session
+    username = request.session.get('username', 'Guest')
+    email = request.session.get('email', 'No Email Available')
+
+    context = {
+        'name': username,
+        'email': email
+    }
+    return render(request, 'pages/profile.html',context)
 
 def calendar(request):
 	context = {

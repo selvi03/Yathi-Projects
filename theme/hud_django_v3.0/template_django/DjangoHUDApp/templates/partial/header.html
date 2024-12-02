@@ -55,13 +55,14 @@
 	
 	<!-- BEGIN menu -->
 	<div class="menu">
-		<div class="menu-item dropdown">
+		
+		<div class="menu-item dropdown" style="position: absolute; right: 450px;">
 			<a href="#" data-toggle-class="app-header-menu-search-toggled" data-toggle-target=".app" class="menu-link">
 				<div class="menu-icon"><i class="bi bi-search nav-icon"></i></div>
 			</a>
 		</div>
 
-		<div class="menu-item dropdown dropdown-mobile-full">
+		<div class="menu-item dropdown dropdown-mobile-full" style="position: absolute; right: 400px;">
 			<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 				<div class="menu-icon"><i class="bi bi-grid-3x3-gap nav-icon"></i></div>
 			</a>
@@ -115,7 +116,7 @@
 			</div>
 		</div>
 
-		<div class="menu-item dropdown dropdown-mobile-full">
+		<div class="menu-item dropdown dropdown-mobile-full" style="position: absolute; right: 350px;">
 			<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 				<div class="menu-icon"><i class="bi bi-bell nav-icon"></i></div>
 				<div class="menu-badge bg-theme"></div>
@@ -189,13 +190,13 @@
 				</div>
 			</div>
 		</div>
-		<div class="menu-item dropdown dropdown-mobile-full">
+
+		<div class="menu-item dropdown dropdown-mobile-full" style="position: absolute; right: 280px;">
 			<a href="#" data-bs-toggle="dropdown" data-bs-display="static" class="menu-link">
 				<div class="menu-img online">
 					{% load static %}
 					<img src="{% static '/img/user/profile.jpeg' %}" alt="Profile" height="60">
 				</div>
-				<div class="menu-text d-sm-block d-none w-170px">{{user.email}}</div>
 			</a>
 			<div class="dropdown-menu dropdown-menu-end me-lg-3 fs-11px mt-1">
 				<a class="dropdown-item d-flex align-items-center" href="/profile">PROFILE <i class="bi bi-person-circle ms-auto text-theme fs-16px my-n1"></i></a>
@@ -205,13 +206,16 @@
 				<div class="dropdown-divider"></div>
 				<a class="dropdown-item d-flex align-items-center" href="/page/login">LOGOUT <i class="bi bi-toggle-off ms-auto text-theme fs-16px my-n1"></i></a>
 			</div>
-
-
 			
 		</div>
 
 
+		<div class="menu-text d-sm-block d-none w-170px" style="position: absolute; right: 130px; color:white">
+			{{request.session.email}}
+		</div>
 
+		
+		
 		<div class="ms-3" style="position: absolute; right: 20px;"> 
 			{% if request.session.email and request.session.jwt_token %}
 				<!-- Logout Button -->
@@ -225,8 +229,10 @@
 					LogIn <i class="fa fa-arrow-right ms-1"></i>
 				</a>
 			{% endif %}
+			
 		</div>
-		
+
+
 
 	</div>
 	<!-- END menu -->
