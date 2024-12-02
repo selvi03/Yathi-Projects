@@ -48,9 +48,13 @@ from django.conf import settings
 from django.conf import settings as django_settings
 from jwt import decode, ExpiredSignatureError, InvalidTokenError
 from .forms import ProfileForm 
-from django.http import JsonResponse
-import datetime
-import json
+from django.core.files.storage import FileSystemStorage
+from oauth2client.service_account import ServiceAccountCredentials
+import gspread
+from django.core.cache import cache
+
+
+
 
 
 
@@ -68,7 +72,7 @@ def get_sheet_data():
     
     # The ID of the Google Spreadsheet and range
     SPREADSHEET_ID = '1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE'
-    RANGE_NAME = 'profile!A:Z'
+    RANGE_NAME = 'profile!A:AE'
 
     # Define the scope
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -83,7 +87,6 @@ def get_sheet_data():
     result = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
     values = result.get('values', [])
     return values  # Returns all rows of data from the sheet
-
 
 
 
@@ -110,9 +113,12 @@ def pageLogin(request):
             print(sheet_data)
 
             for row in sheet_data[1:]:  # Skip header row
-                if email.strip() == row[1].strip() and password.strip() == row[2].strip():
+                if email.strip() == row[1].strip() and password.strip() == row[2].strip() and row[29].strip() == "0":
                     role = row[14].strip()
-                    print(f"Retrieved role for {email}: {role}")  # Debug: Print the role
+                    delete=row[29].strip()
+                    print(f"Retrieved role for {email}: {role}")
+                    print(f"Retrieved role for {email}: {delete}")  # Debug: Print the role
+                      # Debug: Print the role
 
                     token_payload = {
                         'email': email,
@@ -128,19 +134,17 @@ def pageLogin(request):
                         email=email,
                         event_type='Login',
                         spreadsheet_id='1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE',
-                        range_name='login!A:E',
+                        range_name='login!A:AK',
                         service_account_file='E:\\Theme+\\hud_django_v3.0\\template_django\\DjangoHUDApp\\credentials\\google_credentials.json'
                     )
-                    # Redirect based on role
+                     # Redirect based on role
                     if role.strip().lower() == 'admin':
                         print(f"Redirecting {email} to organization-data-list")  
                         return redirect('DjangoHUDApp:organization-data-list')
                     elif role.strip().lower() == 'manager':
                         print(f"redirecting {email} to placement_training")
                         return redirect('DjangoHUDApp:placement_training')
-                    elif role.strip().lower() == 'user':
-                        print(f"redirecting {email} to training_data")
-                        return redirect('DjangoHUDApp:training_data')
+                   
                     elif role.strip().lower() == 'trainer':
                         print(f"redirecting {email} to corporate_training")
                         return redirect('DjangoHUDApp:corporate_training')
@@ -148,8 +152,7 @@ def pageLogin(request):
                         print(f"Redirecting {email} to landing")  
                         return redirect('DjangoHUDApp:landing')
 
-                    # return redirect('DjangoHUDApp:landing')  # Redirect to authenticated page
-            return JsonResponse({'error': 'Invalid credentials.'}, status=401)
+            return JsonResponse({'error': 'Invalid credentialsss.'}, status=401)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -187,7 +190,6 @@ def log_inactivity(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
-
 
 
 
@@ -339,395 +341,765 @@ def validate_token(request):
 
 
 
+from django.http import HttpResponseForbidden
+from functools import wraps
 
     
 logger = logging.getLogger(__name__)
 
-@csrf_protect
-def organization_data_list(request):
-    # Define fields for form updates
-    fields = [
-        'org_name', 'spoc_name', 'designation', 'phone_no', 'email',
-        'address', 'location', 'website', 'source_data', 'status',
-        'feedback', 'remark', 'reference', 'callback_date',
-        'initiated_date', 'followup_date'
-    ]
+#----==================== Role Based Access ===================------------------
+
+def admin_or_superadmin_required(view_func):
+    """Decorator to restrict access to admins or superadmins only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # Check if the user is logged in and has the required role
+        email = request.session.get('email')
+        role = None
+        if email:
+            # Fetch data from Google Sheet to validate the user's role
+            sheet_data = get_sheet_data()
+            for row in sheet_data[1:]:  # Skip header row
+                if email.strip() == row[1].strip():  # Match email
+                    role = row[14].strip()  # Assuming role is at column 14
+                    break
+        
+        if role and role.lower() in ['admin', 'superadmin']:
+            return view_func(request, *args, **kwargs)
+        else:
+            # Deny access for non-admins or non-superadmins
+            return HttpResponseForbidden("You do not have permission to access this page.")
     
+    return wrapper
+
+def manager_or_superadmin_required(view_func):
+    """Decorator to restrict access to admins or superadmins only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # Check if the user is logged in and has the required role
+        email = request.session.get('email')
+        role = None
+        if email:
+            # Fetch data from Google Sheet to validate the user's role
+            sheet_data = get_sheet_data()
+            for row in sheet_data[1:]:  # Skip header row
+                if email.strip() == row[1].strip():  # Match email
+                    role = row[14].strip()  # Assuming role is at column 14
+                    break
+        
+        if role and role.lower() in ['manager', 'superadmin']:
+            return view_func(request, *args, **kwargs)
+        else:
+            # Deny access for non-admins or non-superadmins
+            return HttpResponseForbidden("You do not have permission to access this page.")
+    
+    return wrapper
+
+
+def user_or_superadmin_required(view_func):
+    """Decorator to restrict access to admins or superadmins only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # Check if the user is logged in and has the required role
+        email = request.session.get('email')
+        role = None
+        if email:
+            # Fetch data from Google Sheet to validate the user's role
+            sheet_data = get_sheet_data()
+            for row in sheet_data[1:]:  # Skip header row
+                if email.strip() == row[1].strip():  # Match email
+                    role = row[14].strip()  # Assuming role is at column 14
+                    break
+        
+        if role and role.lower() in ['user', 'superadmin']:
+            return view_func(request, *args, **kwargs)
+        else:
+            # Deny access for non-admins or non-superadmins
+            return HttpResponseForbidden("You do not have permission to access this page.")
+    
+    return wrapper
+
+
+def trainer_or_superadmin_required(view_func):
+    """Decorator to restrict access to admins or superadmins only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        # Check if the user is logged in and has the required role
+        email = request.session.get('email')
+        role = None
+        if email:
+            # Fetch data from Google Sheet to validate the user's role
+            sheet_data = get_sheet_data()
+            for row in sheet_data[1:]:  # Skip header row
+                if email.strip() == row[1].strip():  # Match email
+                    role = row[14].strip()  # Assuming role is at column 14
+                    break
+        
+        if role and role.lower() in ['trainer', 'superadmin']:
+            return view_func(request, *args, **kwargs)
+        else:
+            # Deny access for non-admins or non-superadmins
+            return HttpResponseForbidden("You do not have permission to access this page.")
+    
+    return wrapper
+
+#--------========================================================-------------------
+
+
+#=================== organization-data-list =================================
+# Google Sheets authorization scope
+SCOPE = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+@csrf_protect
+@admin_or_superadmin_required
+def organization_data_list(request):
+    """
+    Handles Google Sheets integration, including form submissions, auto-save requests,
+    and rendering data for placement training.
+    """
+
+    def get_google_sheets_client():
+        """Returns the Google Sheets client."""
+        try:
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                'DjangoHUDApp/credentials/google_credentials.json',
+                [
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ],
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open_by_url(
+                "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit?gid=2024647455#gid=2024647455"
+            )
+            return sheet.get_worksheet(0)
+        except Exception as e:
+            logger.error("Error obtaining Google Sheets client: %s", e)
+            raise
+
+    def convert_datetime_to_str(date_obj):
+        """Converts datetime or date object to string."""
+        if isinstance(date_obj, (datetime.datetime, datetime.date)):
+            return date_obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif date_obj is None:
+            return 'No Date'
+        else:
+            raise ValueError(f"Unsupported type for date_obj: {type(date_obj)}")
+
+    def get_spreadsheet_data_from_sheets():
+        """Fetches data from Google Sheets directly."""
+        try:
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            rows = worksheet.get_all_values()
+            if rows:
+                header = rows[0]
+                data = [
+                    dict(zip(header, row))
+                    for row in rows[1:]
+                    if row[16].strip() != '1'  # Exclude rows marked as deleted
+                ]
+                return data
+            return []
+        except Exception as e:
+            logger.error("Error retrieving Google Sheets data: %s", e)
+            return []
+
+    def get_spreadsheet_data():
+        """Fetches data from cache or Google Sheets."""
+        cached_data = cache.get('spreadsheet_data')
+        if cached_data:
+            return cached_data
+
+        data = get_spreadsheet_data_from_sheets()  # Fetch from Sheets
+        cache.set('spreadsheet_data', data, timeout=60 * 10)  # Cache for 5 minutes
+        return data
+
+    def make_request_with_retries(request_func, retries=10, delay=1):
+        """Retry API requests with exponential backoff."""
+        for i in range(retries):
+            try:
+                return request_func()
+            except HttpError as err:
+                if err.resp.status == 429:  # Rate limit exceeded
+                    wait_time = delay * (2 ** i)  # Exponential backoff
+                    logger.warning(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+        raise Exception("Max retries reached, request failed.")
+
+    def handle_ajax_requests(request):
+        """Handles AJAX requests for auto-save and delete actions."""
+        try:
+            row_data = json.loads(request.body)
+            action = row_data.get('action')
+
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            records = worksheet.get_all_values()
+
+            if action == 'delete':
+                record_id = row_data.get('id')
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[17] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, 17, "1")  # Mark as deleted
+                    return JsonResponse({'success': True, 'message': 'Row marked as deleted.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+            elif action == 'autosave':
+                record_id = row_data.get('id')
+                col_index = int(row_data.get('col_index')) + 1
+                value = row_data.get('value')
+
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[17] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, col_index, value)
+                    submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    worksheet.update_cell(row_index, 21, request.session.get('email', 'Unknown'))
+                    worksheet.update_cell(row_index, 22, submission_time)
+                    return JsonResponse({'success': True, 'message': 'Auto-saved successfully.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+        except Exception as e:
+            logger.error("Error processing AJAX request: %s", e)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    def handle_form_submission(request):
+        """Handles form submissions."""
+        form = OrganizationDataForm(request.POST)
+        if form.is_valid():
+            try:
+                cleaned_data = form.cleaned_data
+                for field in ['callback_date', 'initiated_date', 'followup_date']:
+                    cleaned_data[field] = convert_datetime_to_str(cleaned_data.get(field))
+                cleaned_data['deleted'] = '0'
+                submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                worksheet = make_request_with_retries(get_google_sheets_client)
+                current_row_count = len(worksheet.get_all_values()) - 1
+                next_id = current_row_count + 1
+
+                worksheet.append_row([ 
+                    cleaned_data['org_name'], cleaned_data['spoc_name'], cleaned_data['designation'],
+                    cleaned_data['phone_no'], cleaned_data['email'], cleaned_data['address'],
+                    cleaned_data['location'], cleaned_data['website'], cleaned_data['source_data'],
+                    cleaned_data['status'], cleaned_data['feedback'], cleaned_data['remark'],
+                    cleaned_data['reference'], cleaned_data['callback_date'], cleaned_data['initiated_date'],
+                    cleaned_data['followup_date'], cleaned_data['deleted'], next_id,
+                    request.session.get('email', 'Unknown'), submission_time
+                ])
+                # Clear cache after form submission to ensure updated data is fetched next time
+                cache.delete('spreadsheet_data')
+                return redirect('DjangoHUDApp:organization-data-list')
+            except Exception as e:
+                logger.error("Error storing data: %s", str(e))
+                return JsonResponse({'success': False, 'message': 'Error saving data'}, status=500)
+
+        logger.error("Form errors: %s", form.errors)
+        return JsonResponse({'success': False, 'message': 'Invalid form submission', 'errors': form.errors}, status=400)
+
+    # Main logic for the view
+    if request.method == 'POST':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return handle_ajax_requests(request)
+        return handle_form_submission(request)
+
+    try:
+        data = get_spreadsheet_data()
+    except Exception as e:
+        logger.error("Error fetching spreadsheet data: %s", e)
+        data = []
+
+    return render(request, 'pages/organization-data-list.html', {'form': OrganizationDataForm(), 'data': data})
+
+#============================================================
+
+
+#===================== placement_training_view =================================
+
+@csrf_protect
+@manager_or_superadmin_required
+def placement_training_view(request):
+    """
+    Handles Google Sheets integration, including form submissions, auto-save requests,
+    and rendering data for placement training.
+    """
+
+    def get_google_sheets_client():
+        """Returns the Google Sheets client."""
+        try:
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                'DjangoHUDApp/credentials/google_credentials.json',
+                [
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ],
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open_by_url(
+                "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit#gid=1150146711"
+            )
+            return sheet.get_worksheet(1)
+        except Exception as e:
+            logger.error("Error obtaining Google Sheets client: %s", e)
+            raise
+
+    def convert_datetime_to_str(date_obj):
+        """Converts datetime or date object to string."""
+        if isinstance(date_obj, (datetime.datetime, datetime.date)):
+            return date_obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif date_obj is None:
+            return 'No Date'
+        else:
+            raise ValueError(f"Unsupported type for date_obj: {type(date_obj)}")
+
+    def get_spreadsheet_data_from_sheets():
+        """Fetches data from Google Sheets directly."""
+        try:
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            rows = worksheet.get_all_values()
+            if rows:
+                header = rows[0]
+                data = [
+                    dict(zip(header, row))
+                    for row in rows[1:]
+                    if row[16].strip() != '1'  # Exclude rows marked as deleted
+                ]
+                return data
+            return []
+        except Exception as e:
+            logger.error("Error retrieving Google Sheets data: %s", e)
+            return []
+
+    def get_spreadsheet_data():
+        """Fetches data from cache or Google Sheets."""
+        cached_data = cache.get('spreadsheet_data')
+        if cached_data:
+            return cached_data
+
+        data = get_spreadsheet_data_from_sheets()  # Fetch from Sheets
+        cache.set('spreadsheet_data', data, timeout=60 * 5)  # Cache for 5 minutes
+        return data
+
+    def make_request_with_retries(request_func, retries=5, delay=1):
+        """Retry API requests with exponential backoff."""
+        for i in range(retries):
+            try:
+                return request_func()
+            except HttpError as err:
+                if err.resp.status == 429:  # Rate limit exceeded
+                    wait_time = delay * (2 ** i)  # Exponential backoff
+                    logger.warning(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+        raise Exception("Max retries reached, request failed.")
+
+    def handle_ajax_requests(request):
+        """Handles AJAX requests for auto-save and delete actions."""
+        try:
+            row_data = json.loads(request.body)
+            action = row_data.get('action')
+
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            records = worksheet.get_all_values()
+
+            if action == 'delete':
+                record_id = row_data.get('id')
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[17] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, 17, "1")  # Mark as deleted
+                    return JsonResponse({'success': True, 'message': 'Row marked as deleted.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+            elif action == 'autosave':
+                record_id = row_data.get('id')
+                col_index = int(row_data.get('col_index')) + 1
+                value = row_data.get('value')
+
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[17] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, col_index, value)
+                    submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    worksheet.update_cell(row_index, 21, request.session.get('email', 'Unknown'))
+                    worksheet.update_cell(row_index, 22, submission_time)
+                    return JsonResponse({'success': True, 'message': 'Auto-saved successfully.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+        except Exception as e:
+            logger.error("Error processing AJAX request: %s", e)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    def handle_form_submission(request):
+        """Handles form submissions."""
+        form = PlacementTrainingForm(request.POST)
+        if form.is_valid():
+            try:
+                cleaned_data = form.cleaned_data
+                for field in ['callback_date', 'initiated_date', 'followup_date']:
+                    cleaned_data[field] = convert_datetime_to_str(cleaned_data.get(field))
+                cleaned_data['deleted'] = '0'
+                submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                worksheet = make_request_with_retries(get_google_sheets_client)
+                current_row_count = len(worksheet.get_all_values()) - 1
+                next_id = current_row_count + 1
+
+                worksheet.append_row([ 
+                    cleaned_data['org_name'], cleaned_data['spoc_name'], cleaned_data['designation'],
+                    cleaned_data['phone_no'], cleaned_data['email'], cleaned_data['address'],
+                    cleaned_data['location'], cleaned_data['website'], cleaned_data['source_data'],
+                    cleaned_data['status'], cleaned_data['feedback'], cleaned_data['remark'],
+                    cleaned_data['reference'], cleaned_data['callback_date'], cleaned_data['initiated_date'],
+                    cleaned_data['followup_date'], cleaned_data['deleted'], next_id,
+                    request.session.get('email', 'Unknown'), submission_time
+                ])
+                # Clear cache after form submission to ensure updated data is fetched next time
+                cache.delete('spreadsheet_data')
+                return redirect('DjangoHUDApp:placement_training')
+            except Exception as e:
+                logger.error("Error storing data: %s", str(e))
+                return JsonResponse({'success': False, 'message': 'Error saving data'}, status=500)
+
+        logger.error("Form errors: %s", form.errors)
+        return JsonResponse({'success': False, 'message': 'Invalid form submission', 'errors': form.errors}, status=400)
+
+    # Main logic for the view
+    if request.method == 'POST':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return handle_ajax_requests(request)
+        return handle_form_submission(request)
+
+    try:
+        data = get_spreadsheet_data()
+    except Exception as e:
+        logger.error("Error fetching spreadsheet data: %s", e)
+        data = []
+
+    return render(request, 'pages/placement_training.html', {'form': PlacementTrainingForm(), 'data': data})
+
+#===============================================================================
+
+#================= training_data_view ==========================================
+# Google Sheets authorization scope
+
+SCOPE = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+@csrf_protect
+@user_or_superadmin_required
+def training_data_view(request):
+    """
+    Handles Google Sheets integration, including form submissions, auto-save requests,
+    and rendering data for placement training.
+    """
+
+    def get_google_sheets_client():
+        """Returns the Google Sheets client."""
+        try:
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                'DjangoHUDApp/credentials/google_credentials.json',
+                [
+                    "https://www.googleapis.com/auth/spreadsheets",
+                    "https://www.googleapis.com/auth/drive",
+                ],
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open_by_url(
+                "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit?gid=1607700667#gid=1607700667"
+            )
+            return sheet.get_worksheet(2)
+        except Exception as e:
+            logger.error("Error obtaining Google Sheets client: %s", e)
+            raise
+
+    def convert_datetime_to_str(date_obj):
+        """Converts datetime or date object to string."""
+        if isinstance(date_obj, (datetime.datetime, datetime.date)):
+            return date_obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif date_obj is None:
+            return 'No Date'
+        else:
+            raise ValueError(f"Unsupported type for date_obj: {type(date_obj)}")
+
+    def get_spreadsheet_data_from_sheets():
+        try:
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            rows = worksheet.get_all_values()
+            logger.info(f"Rows retrieved from Google Sheet: {rows}")  # Add this
+            if rows:
+                header = rows[0]
+                data = [
+                    dict(zip(header, row))
+                    for row in rows[1:]
+                    if len(row) >= 10 and row[10].strip() != '1'  # Exclude rows marked as deleted
+                ]
+                logger.info(f"Processed data: {data}")  # Add this
+                return data
+            return []
+        except Exception as e:
+            logger.error("Error retrieving Google Sheets data: %s", e)
+            return []
+
+    def get_spreadsheet_data(bypass_cache=False):
+        if not bypass_cache:
+            cached_data = cache.get('spreadsheet_data')
+            logger.info(f"Cached data: {cached_data}")  # Add this
+            if cached_data:
+                return cached_data
+
+        data = get_spreadsheet_data_from_sheets()
+        cache.set('spreadsheet_data', data, timeout=60 * 10)
+        return data
+
+    def make_request_with_retries(request_func, retries=10, delay=1):
+        """Retry API requests with exponential backoff."""
+        for i in range(retries):
+            try:
+                return request_func()
+            except HttpError as err:
+                if err.resp.status == 429:  # Rate limit exceeded
+                    wait_time = delay * (2 ** i)  # Exponential backoff
+                    logger.warning(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+        raise Exception("Max retries reached, request failed.")
+
+    def handle_ajax_requests(request):
+        """Handles AJAX requests for auto-save and delete actions."""
+        try:
+            row_data = json.loads(request.body)
+            action = row_data.get('action')
+
+            worksheet = make_request_with_retries(get_google_sheets_client)
+            records = worksheet.get_all_values()
+
+            if action == 'delete':
+                record_id = row_data.get('id')
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[11] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, 10, "1")  # Mark as deleted
+                    return JsonResponse({'success': True, 'message': 'Row marked as deleted.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+            elif action == 'autosave':
+                record_id = row_data.get('id')
+                col_index = int(row_data.get('col_index')) + 1
+                value = row_data.get('value')
+
+                row_index = next(
+                    (index for index, row in enumerate(records, start=1) if row[11] == record_id), None
+                )
+                if row_index:
+                    worksheet.update_cell(row_index, col_index, value)
+                    submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    worksheet.update_cell(row_index, 14, request.session.get('email', 'Unknown'))
+                    worksheet.update_cell(row_index, 15, submission_time)
+                    return JsonResponse({'success': True, 'message': 'Auto-saved successfully.'})
+                return JsonResponse({'success': False, 'message': 'Record ID not found.'}, status=404)
+
+        except Exception as e:
+            logger.error("Error processing AJAX request: %s", e)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+    def handle_form_submission(request):
+        form = TrainingDataForm(request.POST)
+        if form.is_valid():
+            try:
+                cleaned_data = form.cleaned_data
+                cleaned_data['deleted'] = '0'
+                submission_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                worksheet = make_request_with_retries(get_google_sheets_client)
+                current_row_count = len(worksheet.get_all_values()) - 1
+                next_id = current_row_count + 1
+
+                worksheet.append_row([
+                    cleaned_data['training_name'],
+                    cleaned_data['trainer_name'],
+                    str(cleaned_data['date']),
+                    str(cleaned_data['duration']),
+                    cleaned_data['location'],
+                    cleaned_data['feedback'],
+                    cleaned_data['remarks'],
+                    cleaned_data['reference'],
+                    cleaned_data['deleted'],
+                    next_id,
+                    request.session.get('email', 'Unknown'),
+                    submission_time,
+                ])
+                # Fetch updated data bypassing cache
+                data_to_display = get_spreadsheet_data(bypass_cache=True)  
+                return render(request, 'pages/training_data.html', {'form': TrainingDataForm(), 'data': data_to_display})
+            except Exception as e:
+                logger.error("Error storing data: %s", str(e))
+                return JsonResponse({'success': False, 'message': 'Error saving data'}, status=500)
+
+        logger.error("Form errors: %s", form.errors)
+        return JsonResponse({'success': False, 'message': 'Invalid form submission', 'errors': form.errors}, status=400)
+
+    if request.method == 'POST':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return handle_ajax_requests(request)
+        return handle_form_submission(request)
+
+    try:
+        data = get_spreadsheet_data()
+    except Exception as e:
+        logger.error("Error fetching spreadsheet data: %s", e)
+        data = []
+
+    # Filtering data to exclude rows where 'deleted' is '1'
+    data_to_display = [entry for entry in data if entry.get('deleted', '0') == '0']
+
+    return render(request, 'pages/training_data.html', {'form': TrainingDataForm(), 'data': data_to_display})
+
+#===============================================================================
+from decimal import Decimal
+
+#==================== corporate_training_view ==================================
+@trainer_or_superadmin_required
+def corporate_training_view(request):
     scope = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
-    
-    # Function to convert datetime to string format
-    def convert_datetime_to_str(date_obj):
-        if isinstance(date_obj, datetime):
-            return date_obj.strftime('%Y-%m-%d %H:%M:%S')
-        return date_obj
-    
-    # Function to retrieve data from Google Sheets
-    def get_spreadsheet_data():
+
+    def convert_to_str(value):
+        """Convert various data types to string format."""
+        if isinstance(value, datetime.datetime):
+            return value.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(value, datetime.date):
+            return value.strftime('%Y-%m-%d')
+        elif isinstance(value, datetime.time):
+            return value.strftime('%H:%M:%S')
+        elif isinstance(value, Decimal):
+            return str(value)  # Convert Decimal to string for JSON compatibility
+        return str(value)
+
+    def fetch_google_sheet_data():
+        """Fetch all data from the Google Sheets worksheet."""
         try:
             creds = ServiceAccountCredentials.from_json_keyfile_name(
                 'DjangoHUDApp/credentials/google_credentials.json', scope
             )
             client = gspread.authorize(creds)
-            sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1xJGQFFkucEbFjJf8Y05x8OOcFp2e_ZxTz_rtjq7QQ1g/edit?gid=914811941#gid=914811941")
-            worksheet = sheet.get_worksheet(0)
-            
-            # Retrieve all rows in the spreadsheet
-            rows = worksheet.get_all_values()
-            
-            # Convert rows to list of dictionaries if there's a header row
-            if rows:
-                header = rows[0]  # First row as header
-                data = []
-                for row in rows[1:]:
-                    row_dict = dict(zip(header, row))  # Convert each row to a dictionary
-                    
-                    # Handle dropdown columns - map the text values to the correct choices
-                    if 'source_data' in row_dict:
-                        # Check if the value exists in the SOURCE_DATA_CHOICES
-                        if row_dict['source_data'] in dict(OrganizationDataAlt.SOURCE_DATA_CHOICES):
-                            row_dict['source_data'] = row_dict['source_data']
-                        else:
-                            row_dict['source_data'] = None  # Default to None if not valid
-                            
-                    if 'status' in row_dict:
-                        # Check if the value exists in the STATUS_CHOICES
-                        if row_dict['status'] in dict(OrganizationDataAlt.STATUS_CHOICES):
-                            row_dict['status'] = row_dict['status']
-                        else:
-                            row_dict['status'] = None  # Default to None if not valid
-                    
-                    if 'feedback' in row_dict:
-                        # Check if the value exists in the FEEDBACK_CHOICES
-                        if row_dict['feedback'] in dict(OrganizationDataAlt.FEEDBACK_CHOICES):
-                            row_dict['feedback'] = row_dict['feedback']
-                        else:
-                            row_dict['feedback'] = None  # Default to None if not valid
-                    
-                    # Append the row dictionary to the data list
-                    data.append(row_dict)
-                return data
-            else:
-                return []
+            sheet = client.open_by_url(
+                "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit#gid=599886608"
+            )
+            worksheet = sheet.get_worksheet(3)  # Ensure correct worksheet index
+            return worksheet.get_all_records()  # Fetch all records as a list of dictionaries
         except Exception as e:
-            logger.error("Error retrieving Google Sheets data: %s", e)
-            return []
-
-    # Handle POST request for form submission or field update
-    if request.method == 'POST':
-        form = OrganizationDataForm(request.POST)
+            logger.error(f"Error fetching Google Sheets data: {str(e)}")
+            return []  # Return an empty list if an error occurs
         
-        # Handle field update via POST (editing specific fields in an existing entry)
-        field_name = request.POST.get('field_name')
-        field_value = request.POST.get('field_value')
-        instance_id = request.POST.get('instance_id')
-        
-        if field_name and field_value and instance_id:
-            if field_name in fields:
-                try:
-                    org_data = OrganizationDataAlt.objects.get(id=instance_id)
-                    setattr(org_data, field_name, field_value)
-                    org_data.save()
-                    logger.info(f'Updated {field_name} for instance {instance_id}')
-                    return JsonResponse({'success': True})
-                except OrganizationDataAlt.DoesNotExist:
-                    logger.error('Instance not found for ID: %s', instance_id)
-                    return JsonResponse({'success': False, 'message': 'Instance not found'}, status=404)
-                except Exception as e:
-                    logger.error('Error saving data: %s', str(e))
-                    return JsonResponse({'success': False, 'message': str(e)}, status=500)
-            else:
-                logger.warning('Invalid field name attempted: %s', field_name)
-                return JsonResponse({'success': False, 'message': 'Invalid field name'}, status=400)
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            # Parse the data from the AJAX request
+            row_data = json.loads(request.body)
+            print(f"Received data: {row_data}")
 
-        # Handle form submission (new entry)
-        if form.is_valid():
-            try:
-                # Save form data to the model
-                org_data = form.save(commit=False)
-                org_data.save()
+            # Check if row_index and col_index are in the data
+            row_index = int(row_data['row_index']) + 1  # Adjust for header row
+            col_index = int(row_data['col_index']) + 1 # Adjust for 1-based indexing
+            value = row_data['value']
+            print(f"row_index: {row_index}, col_index: {col_index}")
 
-                # Convert datetime fields to strings before sending to Google Sheets
-                cleaned_data = form.cleaned_data
-                for field in ['callback_date', 'initiated_date', 'followup_date']:
-                    cleaned_data[field] = convert_datetime_to_str(cleaned_data[field])
+            # Check if row_index and col_index are valid
+            if row_index is None or col_index is None:
+                return JsonResponse({'success': False, 'message': 'Row or column index missing!'}, status=400)
+            print(f"row_index: {row_index}, col_index: {col_index}, value: {value}")
 
-                # Load credentials and authorize access to Google Sheets
-                creds = ServiceAccountCredentials.from_json_keyfile_name(
-                    'DjangoHUDApp/credentials/google_credentials.json', scope
-                )
-                client = gspread.authorize(creds)
-                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1xJGQFFkucEbFjJf8Y05x8OOcFp2e_ZxTz_rtjq7QQ1g/edit?gid=914811941#gid=914811941")
-                worksheet = sheet.get_worksheet(0)
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                'DjangoHUDApp/credentials/google_credentials.json', scope
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open_by_url(
+                "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit?gid=599886608#gid=599886608"
+            )
+            worksheet = sheet.get_worksheet(3)
 
-                # Append data to Google Sheets
-                worksheet.append_row([ 
-                    cleaned_data['org_name'],
-                    cleaned_data['spoc_name'],
-                    cleaned_data['designation'],
-                    cleaned_data['phone_no'],
-                    cleaned_data['email'],
-                    cleaned_data['address'],
-                    cleaned_data['location'],
-                    cleaned_data['website'],
-                    cleaned_data['source_data'],
-                    cleaned_data['status'],
-                    cleaned_data['feedback'],
-                    cleaned_data['remark'],
-                    cleaned_data['reference'],
-                    cleaned_data['callback_date'],
-                    cleaned_data['initiated_date'],
-                    cleaned_data['followup_date'],
-                ])
+            # Update the specific row and column in the spreadsheet
+            row_index = int(row_index) + 1  # Adjust for header row
+            col_index = int(col_index) # Adjust for 1-based indexing
+            worksheet.update_cell(row_index, col_index, row_data['value'])
 
-                # After successful save, redirect to the same page with success message
-                return redirect('DjangoHUDApp:organization-data-list')  # Replace with your correct URL pattern
+            # Fetch updated data
+            rows = worksheet.get_all_values()
+            return JsonResponse({'success': True, 'message': 'Auto-saved successfully.', 'data': rows})
 
-            except Exception as e:
-                logger.error('Error storing data: %s', str(e))
-                return JsonResponse({'success': False, 'message': 'Error saving data'}, status=500)
-
-        return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
-
-    else:  # Handle GET request to retrieve data from Google Sheets
-        form = OrganizationDataForm()
-        spreadsheet_data = get_spreadsheet_data()  # Fetch only from Google Sheets
-        
-        # Pass data to context for rendering in the template
-        context = {
-            'form': form,
-            'data': spreadsheet_data,  # Spreadsheet data is used directly
-            'success_message': request.GET.get('success_message', '')
-        }
-        return render(request, 'pages/organization-data-list.html', context)
-    
-def placement_training_view(request):
-    if request.method == "POST":
-        form = PlacementTrainingForm(request.POST)
-        if form.is_valid():
-            org_data = form.save(commit=False)
-            status = form.cleaned_data.get('status')
-
-            # Set the date fields based on user input, if provided
-            if status == 'callback':
-                org_data.callback_date = form.cleaned_data.get('callback_date')
-            elif status == 'initiated':
-                org_data.initiated_date = form.cleaned_data.get('initiated_date')
-            elif status == 'follow up':
-                org_data.followup_date = form.cleaned_data.get('followup_date')
-
-            # Save the organization data
-            org_data.save()
-
-            # Convert datetime fields to strings for Google Sheets
-            def convert_datetime_to_str(date_obj):
-                return date_obj.strftime('%Y-%m-%d %H:%M:%S') if isinstance(date_obj, datetime) else ''
-
-            callback_date = convert_datetime_to_str(org_data.callback_date)
-            initiated_date = convert_datetime_to_str(org_data.initiated_date)
-            followup_date = convert_datetime_to_str(org_data.followup_date)
-
-            try:
-                # Google Sheets API setup and authorization
-                scope = [
-                    "https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive"
-                ]
-                creds = ServiceAccountCredentials.from_json_keyfile_name(
-                    'DjangoHUDApp/credentials/google_credentials.json', scope
-                )
-                client = gspread.authorize(creds)
-                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1xJGQFFkucEbFjJf8Y05x8OOcFp2e_ZxTz_rtjq7QQ1g/edit?gid=2049597071#gid=2049597071")
-                worksheet = sheet.get_worksheet(1)
-
-                # Append data to Google Sheets
-                worksheet.append_row([
-                    form.cleaned_data.get('org_name', ''),
-                    form.cleaned_data.get('spoc_name', ''),
-                    form.cleaned_data.get('designation', ''),
-                    form.cleaned_data.get('phone_no', ''),
-                    form.cleaned_data.get('email', ''),
-                    form.cleaned_data.get('address', ''),
-                    form.cleaned_data.get('location', ''),
-                    form.cleaned_data.get('website', ''),
-                    form.cleaned_data.get('source_data', ''),
-                    form.cleaned_data.get('status', ''),
-                    form.cleaned_data.get('feedback', ''),
-                    form.cleaned_data.get('remark', ''),
-                    form.cleaned_data.get('reference', ''),
-                    callback_date,
-                    initiated_date,
-                    followup_date,
-                ])
-
-            except Exception as e:
-                logger.error('Error updating Google Sheets: %s', str(e))
-                return JsonResponse({'success': False, 'message': 'Google Sheets API error'}, status=503)
-
-            # Redirect to the list view after saving
-            return redirect('DjangoHUDApp:placement_training')
-    else:
-        form = PlacementTrainingForm()
-
-    # Fetch existing data to display in the template
-    data = PlacementTraining.objects.all()
-    return render(request, 'pages/placement_training.html', {'form': form, 'data': data})
-
-def training_data_view(request):
-    # Google Sheets and Drive API scopes
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    # Helper function to convert date/datetime/time to string
-    def convert_to_str(value):
-        """Convert date, datetime, or time objects to string format."""
-        if isinstance(value, datetime):
-            return value.strftime('%Y-%m-%d %H:%M:%S')  # Custom format for datetime
-        elif isinstance(value, date):
-            return value.strftime('%Y-%m-%d')  # Custom format for date
-        elif isinstance(value, time):
-            return value.strftime('%H:%M:%S')  # Custom format for time
-        return str(value)  # Ensure other types are converted to string if necessary
-
-    if request.method == 'POST':
-        form = TrainingDataForm(request.POST)
-        if form.is_valid():
-            try:
-                # Save form data to model
-                training_data = form.save(commit=False)
-                training_data.save()
-
-                # Convert date/time fields to strings
-                cleaned_data = form.cleaned_data
-                for field in ['start_date', 'end_date']:  # Adjust field names as needed
-                    if field in cleaned_data and cleaned_data[field]:
-                        cleaned_data[field] = convert_to_str(cleaned_data[field])
-
-                # Google Sheets API authorization and writing data
-                creds = ServiceAccountCredentials.from_json_keyfile_name(
-                    'DjangoHUDApp/credentials/google_credentials.json', scope
-                )
-                client = gspread.authorize(creds)
-                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1xJGQFFkucEbFjJf8Y05x8OOcFp2e_ZxTz_rtjq7QQ1g/edit?gid=1990701816#gid=1990701816")
-                worksheet = sheet.get_worksheet(2)  # Adjust worksheet index if needed
-
-                # Prepare data for appending to Google Sheets
-                data_to_append = [
-                    convert_to_str(cleaned_data.get('training_name', '')),
-                    convert_to_str(cleaned_data.get('trainer_name', '')),
-                    convert_to_str(cleaned_data.get('date', '')),
-                    convert_to_str(cleaned_data.get('duration', '')),
-                    convert_to_str(cleaned_data.get('location', '')),
-                    convert_to_str(cleaned_data.get('feedback', '')),
-                    convert_to_str(cleaned_data.get('remarks', '')),
-                    convert_to_str(cleaned_data.get('reference', ''))
-                ]
-
-                # Append data to Google Sheets
-                worksheet.append_row(data_to_append)
-
-                return redirect('DjangoHUDApp:training_data')
-
-            except gspread.exceptions.APIError as api_error:
-                logger.error('Google Sheets API error: %s', api_error)
-                return JsonResponse({'success': False, 'message': f'Google Sheets API error: {str(api_error)}'}, status=503)
-
-            except Exception as e:
-                logger.error('Error saving data: %s', str(e))
-                return JsonResponse({'success': False, 'message': f'Error saving data: {str(e)}'}, status=503)
-
-        else:
-            # Log form errors if form validation fails
-            logger.error("Form validation failed: %s", form.errors)
-            return JsonResponse({'success': False, 'message': 'Invalid form data', 'errors': form.errors}, status=400)
-
-    else:
-        form = TrainingDataForm()
-
-    # Fetch existing training data to display
-    data = TrainingData.objects.all()
-    return render(request, 'pages/training_data.html', {'form': form, 'data': data})
-
-def corporate_training_view(request):
-    # Google Sheets and Drive API scopes
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    # Helper function to convert date/datetime/time to string
-    def convert_to_str(value):
-        """Convert date, datetime, or time objects to string format."""
-        if isinstance(value, datetime):
-            return value.strftime('%Y-%m-%d %H:%M:%S')  # Custom format for datetime
-        elif isinstance(value, date):
-            return value.strftime('%Y-%m-%d')  # Custom format for date
-        elif isinstance(value, time):
-            return value.strftime('%H:%M:%S')  # Custom format for time
-        return str(value)  # Ensure other types are converted to string if necessary
+        except Exception as e:
+            logger.error("Error in auto-save: %s", str(e))
+            return JsonResponse({'success': False, 'message': 'Failed to auto-save data.'}, status=500)
 
     if request.method == 'POST':
         form = CorporateTrainingForm(request.POST)
         if form.is_valid():
             try:
-                # Save form data to model
-                corporate_training = form.save(commit=False)
-                corporate_training.save()
+                # Extract cleaned data
+                cleaned_data = {key: convert_to_str(value) for key, value in form.cleaned_data.items()}
 
-                # Convert date/time fields to strings (if applicable)
-                cleaned_data = form.cleaned_data
-                for field in ['training_date']:  # Adjust field names if necessary
-                    if field in cleaned_data and cleaned_data[field]:
-                        cleaned_data[field] = convert_to_str(cleaned_data[field])
-
-                # Google Sheets API authorization and writing data
+                # Google Sheets authorization
                 creds = ServiceAccountCredentials.from_json_keyfile_name(
                     'DjangoHUDApp/credentials/google_credentials.json', scope
                 )
                 client = gspread.authorize(creds)
-                sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1xJGQFFkucEbFjJf8Y05x8OOcFp2e_ZxTz_rtjq7QQ1g/edit?gid=1860153422#gid=1860153422")
-                worksheet = sheet.get_worksheet(3)  # Adjust worksheet index if needed
+                sheet = client.open_by_url(
+                    "https://docs.google.com/spreadsheets/d/1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE/edit#gid=599886608"
+                )
+                worksheet = sheet.get_worksheet(3)
 
-                # Prepare data for appending to Google Sheets
+                # Prepare data for appending
                 data_to_append = [
-                    convert_to_str(cleaned_data.get('course_name', '')),
-                    convert_to_str(cleaned_data.get('trainer_name', '')),
-                    convert_to_str(cleaned_data.get('date', '')),
-                    convert_to_str(cleaned_data.get('duration', '')),
-                    convert_to_str(cleaned_data.get('location', '')),
-                    convert_to_str(cleaned_data.get('participants_count', '')),
-                    convert_to_str(cleaned_data.get('cost', '')),
-                    convert_to_str(cleaned_data.get('feedback', ''))
+                    cleaned_data.get('course_name', ''),
+                    cleaned_data.get('trainer_name', ''),
+                    cleaned_data.get('date', ''),  # Converted date field
+                    cleaned_data.get('duration', ''),
+                    cleaned_data.get('location', ''),
+                    cleaned_data.get('participants_count', ''),
+                    cleaned_data.get('cost', ''),
+                    cleaned_data.get('feedback', '')
                 ]
 
-                # Append data to Google Sheets
+                # Append to Google Sheets
                 worksheet.append_row(data_to_append)
-
+                logger.info("Data successfully appended to Google Sheets.")
                 return redirect('DjangoHUDApp:corporate_training')
 
-            except gspread.exceptions.APIError as api_error:
-                logger.error('Google Sheets API error: %s', api_error)
-                return JsonResponse({'success': False, 'message': f'Google Sheets API error: {str(api_error)}'}, status=503)
-
             except Exception as e:
-                logger.error('Error saving data: %s', str(e))
-                return JsonResponse({'success': False, 'message': f'Error saving data: {str(e)}'}, status=503)
-
-        else:
-            # Log form errors if form validation fails
-            logger.error("Form validation failed: %s", form.errors)
-            return JsonResponse({'success': False, 'message': 'Invalid form data', 'errors': form.errors}, status=400)
+                logger.error(f"Error saving data: {str(e)}")
+                return JsonResponse({'success': False, 'message': f'Error saving data: {str(e)}'}, status=500)
 
     else:
         form = CorporateTrainingForm()
 
-    # Fetch existing corporate training data to display
-    data = CorporateTraining.objects.all()  # Adjust based on your model
+    # Fetch live data from Google Sheets for template rendering
+    data = fetch_google_sheet_data()
+
     return render(request, 'pages/corporate-training.html', {'form': form, 'data': data})
+
+
+
+
+
+
+
+
 
 def pageadmin(request):
     context = {
@@ -745,20 +1117,14 @@ def index(request):
 
 
 
-
 @csrf_exempt
 def profileadd(request):
     print(f"Request method: {request.method}")
     if request.method == 'GET':
         # Render the form template on a GET request
         print("Rendering GET form")
-        context = {
-            "appSidebarHide": 1,
-            "appHeaderHide": 1,
-            "appContentClass": 'p-0',
-            "profile": None,  # You may replace `None` with an actual profile object if needed
-        }
-        return render(request, 'pages/profile-add.html', context)
+        return render(request, 'pages/profile-add.html')
+    
 
     elif request.method == 'POST':
         try:
@@ -769,7 +1135,6 @@ def profileadd(request):
             gender = request.POST.get('gender')
             birth_date = request.POST.get('birth_date')
             mobile_number = request.POST.get('mobile_number')
-            email = request.POST.get('email')
             college_name = request.POST.get('college_name')
             id_number = request.POST.get('id_number')
             batch_number = request.POST.get('batch_number')
@@ -788,18 +1153,36 @@ def profileadd(request):
             account_number = request.POST.get('account_number')
             pan_number = request.POST.get('pan_number')
             gst_number = request.POST.get('gst_number')
-            photo = request.POST.get('photo')
-            certificate = request.POST.get('certificate')
+           
             ready_to_relocate = request.POST.get('ready_to_relocate')
-            resume = request.POST.get('resume')
             experience = request.POST.get('experience')
+            # Handle file uploads
+            photo = request.FILES.get('photo')
+            certificate = request.FILES.get('certificate')
+            resume = request.FILES.get('resume')
+
+
+            # Define storage paths
+            photo_storage = FileSystemStorage(location='media/photos/')
+            certificate_storage = FileSystemStorage(location='media/certificates/')
+            resume_storage = FileSystemStorage(location='media/resumes/')
+
+            # Save files to respective folders
+            photo_url = photo_storage.save(photo.name, photo) if photo else None
+            certificate_url = certificate_storage.save(certificate.name, certificate) if certificate else None
+            resume_url = resume_storage.save(resume.name, resume) if resume else None
+
+            # Get accessible URLs
+            photo_url = photo_storage.url(photo_url) if photo_url else None
+            certificate_url = certificate_storage.url(certificate_url) if certificate_url else None
+            resume_url = resume_storage.url(resume_url) if resume_url else None
 
             # Path to your service account credentials
             SERVICE_ACCOUNT_FILE = 'E:\\Theme+\\hud_django_v3.0\\template_django\\DjangoHUDApp\\credentials\\google_credentials.json'
            
             # The ID of the Google Spreadsheet and range
             SPREADSHEET_ID = '1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE'
-            RANGE_NAME = 'profile!A:Z'
+            RANGE_NAME = 'profile!A:AH'
 
             # Define the scope
             SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -809,13 +1192,16 @@ def profileadd(request):
 
             # Build the Google Sheets API service
             service = build('sheets', 'v4', credentials=credentials)
+            # Retrieve current user and current datetime
+            created_by = request.session.get('email', 'Anonymous')
+            created_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             # Data to append
             data = [[
                 name, email, password, gender, birth_date, mobile_number, college_name,
                 id_number, batch_number, city, address, state, country, qualification, role,
                 language, skills, locations, bank_name, branch_name, ifsc_code,
-                account_number, pan_number, gst_number, photo, certificate, resume, ready_to_relocate, experience
+                account_number, pan_number, gst_number, photo_url, certificate_url, resume_url, ready_to_relocate, experience,"0",created_by, created_date
             ]]
             body = {'values': data}
 
@@ -827,11 +1213,13 @@ def profileadd(request):
                 valueInputOption='RAW',
                 body=body
             ).execute()
-            return redirect("DjangoHUDApp:pageLogin")
+            success_message = "Your data has been successfully submitted."
+            return render(request, 'pages/profile-add.html', {'success': success_message})
 
         except Exception as e:
             # Handle errors and send a 500 error if needed
             print(f"Error: {e}")
+           
             return JsonResponse({'error': str(e)}, status=500)
     else:
         # Handle invalid request method
@@ -842,56 +1230,208 @@ def profileadd(request):
 
 
 
-def profileupdate(request):
-    profile = None
-
-    # Handle search by email
-    if 'search_email' in request.GET:
-        search_email = request.GET['search_email']
-        try:
-            profile = Profile.objects.get(email=search_email)
-        except Profile.DoesNotExist:
-            messages.error(request, 'No profile found for the given email.')
-            profile = None
-
-    # Handle form submission for update or delete
-    if request.method == 'POST' and profile:
-        if 'update' in request.POST:
-            form = ProfileForm(request.POST, request.FILES, instance=profile)
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'Profile updated successfully.')
-                return redirect('DjangoHUDApp:landing')  # Redirect after successful update
-            else:
-                messages.error(request, 'Please correct the errors below.')
-        elif 'delete' in request.POST:
-            profile.delete()
-            messages.success(request, 'Profile deleted successfully.')
-            return redirect('DjangoHUDApp:profileupdate')  # Redirect after deletion
-
-    # Pass the profile to the template for display
-    context = {
-        "appSidebarHide": 1,
-        "appHeaderHide": 1,
-        "appContentClass": 'p-0',
-        "profile": profile,
-    }
-    return render(request, 'pages/profile-update.html', context)
 
 
 
 
+# Google Sheets setup
+SERVICE_ACCOUNT_FILE = 'E:\\Theme+\\hud_django_v3.0\\template_django\\DjangoHUDApp\\credentials\\google_credentials.json'
+SPREADSHEET_ID = '1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE'
+RANGE_NAME = 'profile!A:AH'  # Adjusted to match columns A (Name), B (Email), C (Password), D (Gender)
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+def update_profile(request):
+    credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    service = build('sheets', 'v4', credentials=credentials)
+    sheet = service.spreadsheets()
+
+    if request.method == "POST":
+        email = request.POST.get('email', '').strip()
+        current_user = request.session.get('email')  # Retrieve the logged-in user's email
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        if 'search' in request.POST:
+            # Search by email
+            result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+            rows = result.get('values', [])
+            email_index = 1  # Email is in the 2nd column (0-based index)
+
+            # Find the row with the matching email
+            for i, row in enumerate(rows):
+                if len(row) > email_index and row[email_index].strip() == email:
+                    profile_data = {
+                        'email': row[1],   # Email in Column 2
+                        'name': row[0],    # Name in Column 1
+                        'password': row[2], # Password in Column 3
+                        'gender': row[3],   # Gender in Column 4
+                        'birth_date':row[4],
+                        'mobile_number':row[5],
+                        'college_name':row[6],
+                        'id_number':row[7],
+                        'batch_number':row[8],
+                        'city':row[9],
+                        'address':row[10],
+                        'state':row[11],
+                        'country':row[12],
+                        'qualification':row[13],
+                        'role':row[14],
+                        'language':row[15],
+                        'skills':row[16],
+                        'locations':row[17],
+                        'bank_name':row[18],
+                        'branch_name':row[19],
+                        'ifsc_code':row[20],
+                        'account_number':row[21],
+                        'pan_number':row[22],
+                        'gst_number':row[23],
+                        'photo':row[24],
+                        'certificate':row[25],
+                        'resume':row[26],
+                        'ready_to_relocate':row[27],
+                        'experience':row[28],
+
+                    }
+                    return render(request, 'pages/profile-update.html', {'profile': profile_data})
+            
+            # If email is not found
+            return render(request, 'pages/profile-update.html', {'error': "Email not found."})
+
+        elif 'update_profile' in request.POST:
+            # Update the spreadsheet
+            result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+            rows = result.get('values', [])
+            email_index = 1  # Email is in the 2nd column (0-based index)
+
+            # Find the row with the matching email
+            for i, row in enumerate(rows):
+                if len(row) > email_index and row[email_index].strip() == email:
+                    # Handle file uploads
+                    fs = FileSystemStorage()
+
+                    photo = request.FILES.get('photo')
+                    certificate = request.FILES.get('certificate')
+                    resume = request.FILES.get('resume')
+
+                    # Save files to the respective folders
+                    photo_url = fs.save(f"photos/{photo.name}", photo) if photo else row[24]
+                    certificate_url = fs.save(f"certificates/{certificate.name}", certificate) if certificate else row[25]
+                    resume_url = fs.save(f"resumes/{resume.name}", resume) if resume else row[26]
 
 
 
-# def profiledelete(request):
-#     context = {
-#         "appSidebarHide": 1,
-#         "appHeaderHide": 1,
-#         "appContentClass": 'p-0'
-#     }
-#     return render(request, "pages/profile-delete.html", context)
+                    updated_data = [
+                        request.POST.get('name', row[0]),  # Name
+                        email,  # Email (unchanged)
+                        request.POST.get('password', row[2]),  # Password
+                        request.POST.get('gender', row[3]),  
+                        request.POST.get('birth_date', row[4]),  
+                        request.POST.get('mobile_number', row[5]), 
+                        request.POST.get('college_name', row[6]),  
+                        request.POST.get('id_number', row[7]),
+                        request.POST.get('batch_number', row[8]),
+                        request.POST.get('city', row[9]),
+                        request.POST.get('address', row[10]),
+                        request.POST.get('state', row[11]),
+                        request.POST.get('country', row[12]),
+                        request.POST.get('qualification', row[13]),
+                        request.POST.get('role', row[14]),
+                        request.POST.get('language', row[15]),
+                        request.POST.get('skills', row[16]),
+                        request.POST.get('locations', row[17]),
+                        request.POST.get('bank_name', row[18]),
+                        request.POST.get('branch_name', row[19]),
+                        request.POST.get('ifsc_code', row[20]),
+                        request.POST.get('account_number', row[21]),
+                        request.POST.get('pan_number', row[22]),
+                        request.POST.get('gst_number', row[23]),
+                        photo_url,
+                        certificate_url,
+                        resume_url,
+                        request.POST.get('ready_to_relocate', row[27]),
+                        request.POST.get('experience', row[28]),
+                        row[29] if len(row) > 29 else '',  # Column 1 after experience
+                        row[30] if len(row) > 30 else '',  # Column 2 after experience
+                        row[31] if len(row) > 31 else '',  # Column 3 after experience
 
+                        current_user,  # Updated by (current logged-in user)
+                        current_time  # Updated date
+
+
+                    ]
+                    range_to_update = f"profile!A{i+1}:AH{i+1}"
+                    sheet.values().update(
+                        spreadsheetId=SPREADSHEET_ID,
+                        range=range_to_update,
+                        valueInputOption='RAW',
+                        body={"values": [updated_data]}
+                    ).execute()
+                    
+
+                    return render(request, 'pages/profile-update.html', {'success': "Profile updated successfully!"})
+
+    return render(request, 'pages/profile-update.html')
+
+
+
+
+
+
+
+
+# Google Sheets API credentials and configuration
+SERVICE_ACCOUNT_FILE = 'E:\\Theme+\\hud_django_v3.0\\template_django\\DjangoHUDApp\\credentials\\google_credentials.json'
+SPREADSHEET_ID = '1yIixxRzO7rqG9Iey7r9zQfww-e89zwqpjBpb3TxE0fE'
+RANGE_NAME = 'profile!A:AK'
+
+# Define the scope
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+# Function to update the last column of the profile in the Google Spreadsheet
+def update_spreadsheet_for_delete(email, deleted_by):
+    # Load the credentials
+    credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+    
+    # Build the Google Sheets API service
+    service = build('sheets', 'v4', credentials=credentials)
+
+    # Get the data from the spreadsheet
+    sheet = service.spreadsheets()
+
+    # Read all the rows from the 'profile' sheet
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+    rows = result.get('values', [])
+
+    # Find the row with the matching email and update the last column (30th column -> index 29)
+    for i, row in enumerate(rows):
+        if len(row) > 1 and row[1].strip() == email:  # Assuming email is in the second column (index 1)
+            # Ensure the row has at least 30 columns (A-AD)
+            while len(row) < 37:
+                row.append('')  # Append empty values to the row until it has 30 columns
+
+            # Update the last column (index 29) to '1'
+            row[29] = '1'
+            row[34] = deleted_by  # Set 'deleted_by' in the 35th column
+            row[35] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Set 'deleted_date' in the 36th column
+            
+            # Update the row in the Google Sheets
+            body = {
+                'values': [row]
+            }
+            sheet.values().update(spreadsheetId=SPREADSHEET_ID, range=f'profile!A{i+1}:AK{i+1}', valueInputOption='RAW', body=body).execute()
+            break
+
+def profiledelete(request):
+    # Check if email is provided in the request
+    if request.method == 'POST' and request.POST.get('email'):
+        email = request.POST['email']
+        deleted_by = request.session.get('email')  # Get the logged-in user's email
+        print(email)
+        update_spreadsheet_for_delete(email, deleted_by)  # Update the last column for the profile
+
+        # Return a success response or render a success message
+        return render(request, "pages/profile-delete.html", {"success": f"Profile with email {email} has been deleted ."})
+    
+    return render(request, "pages/profile-delete.html")
 
 
 

@@ -1,11 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>delete part</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Delete Profile{% endblock %}
+
+{% block content %}
+<style>
+    .submit-btn {
+        width: 30%;
+        background-color: #3cd2a5;
+        border-color: #28a745;
+        border-radius: 8px; 
+        font-size: 18px; 
+        padding: 10px; 
+        margin-top: 20px; 
+        margin-bottom: 1rem;
+        display: block;
+        margin-left: auto; 
+        margin-right: auto;
+        color: white; 
+        border: none;
+    }
+    .search-button {
+        display: inline-block;
+        margin-top: 1rem;
+        text-align: center;
+    }
+</style>
+
+<div class="container mt-5">
+    <form action="{% url 'DjangoHUDApp:profiledelete' %}" method="POST" name="deleteprofile_form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h1 class="text-center">Delete Profile</h1>
+
+        <div class="row mt-4">
+            <!-- Email Field for Searching -->
+            <div class="col-md-4 form-group">
+                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                <input type="email" id="email" name="email" class="form-control form-control-lg" 
+                    placeholder="Enter email to search" value="{{ request.GET.email }}" required>
+            </div>
+        </div>
+
+        <div class="search-button">
+            <button type="submit" class="btn btn-lg btn-danger">Delete</button> 
+        </div>
+            
+        {% if success %}
+            <script>
+                // Show success alert without blanking the background
+                window.onload = function() {
+                    alert("{{ success }}");
+                };
+            </script>
+        {% endif %}
+    </form>
+</div>
+
+{% endblock %}

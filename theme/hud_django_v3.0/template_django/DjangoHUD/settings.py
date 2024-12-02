@@ -48,6 +48,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'DjangoHUDApp.middleware.AuthMiddleware',
 ]
 
 ROOT_URLCONF = 'DjangoHUD.urls'
@@ -142,4 +144,6 @@ USE_TZ = True  # Enable timezone support
 # settings.py
 
 # Set session expiration to 10 minutes (600 seconds)
-# SESSION_COOKIE_AGE = 100  # 1 minutes
+SESSION_COOKIE_AGE = 600  # 10min (adjust as needed)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keeps the session even after the browser is closed
+SESSION_SAVE_EVERY_REQUEST = True  # Update session expiry on every request

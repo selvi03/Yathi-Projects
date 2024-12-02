@@ -25,8 +25,8 @@ urlpatterns = [
 
     path('profile/', views.profile, name='profile'),
     path('profile/add/', views.profileadd, name='profileadd'),
-    path('profile/update/', views.profileupdate, name='profileupdate'),
-    # path('profile/delete/', views.profiledelete, name='profiledelete'),
+    path('profile/update/', views.update_profile, name='profileupdate'),
+    path('profile/delete/', views.profiledelete, name='profiledelete'),
 
 
 
@@ -92,6 +92,10 @@ urlpatterns = [
     path('calendar/', views.calendar, name='calendar'),
     path('settings/', views.settings, name='settings'),
     path('helper/', views.helper, name='helper')
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

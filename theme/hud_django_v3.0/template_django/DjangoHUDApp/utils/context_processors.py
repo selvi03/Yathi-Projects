@@ -272,12 +272,52 @@ def sidebar_menu(request):
 	}, {
 		'text': 'Users',
 		'is_header': 1
-	}, {
-		'url': '/profile',
+	}, 
+      
+	  
+	  {
 		'icon': 'bi bi-people',
 		'text': 'Profile',
-		'name': 'profile'
-	}, {
+		'children': [{
+			'url': '/profile/add',
+			'text': 'Profile Add',
+			'name': 'profileadd'
+		}, {
+			'url': '/profile/update',
+			'text': 'Profile Update',
+			'name': 'profileupdate'
+		}, {
+			'url': '/profile/delete',
+			'text': 'Profile Delete',
+			'name': 'profiledelete'
+		}]
+	},
+     {
+          'icon': 'bi bi-pen',
+		
+		'text': 'Forms',
+		'children': [{
+			'url': '/organization-data/',
+			'text': 'Campus Training',
+			'name': 'organization-data-list'
+		}, {
+			'url': '/placement-training/',
+			'text': 'Placement Training',
+			'name': 'placement_training'
+		}, {
+			'url': '/training-data/',
+			'text': 'Lateral Training',
+			'name': 'training_data'
+		},{
+			'url': '/corporate_training/',
+			'text': 'Corporate Training',
+			'name': 'corporate_training'
+		}]
+	},
+	  
+	  
+	  
+	   {
 		'url': '/calendar',
 		'icon': 'bi bi-calendar4',
 		'text': 'Calendar',

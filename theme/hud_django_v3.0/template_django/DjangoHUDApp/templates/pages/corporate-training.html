@@ -134,6 +134,42 @@
         color: white; /* Deep white */
         font-size:17px;
     }
+    #loadingMessage {
+        animation: fadeInOut 1.5s infinite;
+    }
+    
+    @keyframes fadeInOut {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 1; }
+    }
+      
+    td.loading {
+        position: relative;
+        background: transparent;
+    }
+    
+    td.loading::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        right:5px;
+        transform: translate(-50%, -50%);
+        border: 3px solid transparent;
+        border-top-color: var(--bs-theme);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from {
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
 </style>
 <div class="container mt-5">
     <h1 class="text-center mb-4 text-theme">Corporate Training</h1>
@@ -307,68 +343,55 @@
     // Filter and sort table rows when typing in the search bar
     searchInput.addEventListener("input", filterTable);
 
-    //-----------------------  Auto Update -------------------------
+    //--------================  Auto Update =======================-----------
+    // Store pending updates for batch processing
+    let pendingUpdates = [];
+
     document.querySelectorAll('#dataTable td[contenteditable="true"]').forEach(cell => {
         cell.addEventListener('blur', function () {
-            // Get the updated value
-            const value = this.innerText;
-            let rowIndex = this.dataset.row; // Use dataset to retrieve row index
-            let colIndex = this.dataset.col; // Use dataset to retrieve column index
+            const value = this.innerText.trim(); // Trim extra spaces
+            const rowIndex = parseInt(this.dataset.row);
+            const colIndex = parseInt(this.dataset.col);
     
-            // Ensure rowIndex and colIndex are integers
-            rowIndex = parseInt(rowIndex);  
-            colIndex = parseInt(colIndex);
-            
-            // Log row and column indexes to help debug
-            console.log(`rowIndex: ${rowIndex}, colIndex: ${colIndex}, value: ${value}`);
+            console.log(`Editing cell at row ${rowIndex}, col ${colIndex}, value: ${value}`);
     
-            // Show the loading message before making the request
-            document.getElementById('loadingMessage').style.display = 'block';
+            // Show the loading message
+            const loadingMessage = document.getElementById('loadingMessage');
+            loadingMessage.style.display = 'block';
     
-            // Send auto-save request
+            // Add loading class to the cell
+            this.classList.add('loading');
+    
+            // Send the update request
             fetch('/corporate_training/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCookie('csrftoken') // Ensure CSRF token is sent
+                    'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({ row_index: rowIndex, col_index: colIndex, value: value })
+                body: JSON.stringify({ row_index: rowIndex, col_index: colIndex, value: value }),
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update the table with the latest data
-                    const tableBody = document.querySelector('#dataTable tbody');
-                    tableBody.innerHTML = ''; // Clear current rows
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Successfully updated cell at row ${rowIndex}, col ${colIndex}`);
+                    } else {
+                        alert(data.message);
+                        // Rollback cell content on failure
+                        this.innerText = data.previous_value || value;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating cell:', error);
+                })
+                .finally(() => {
+                    // Hide the loading message
+                    loadingMessage.style.display = 'none';
     
-                    // Render rows with updated data
-                    data.data.forEach((row, rowIndex) => {
-                        const tr = document.createElement('tr');
-                        row.forEach((cellValue, colIndex) => {
-                            const td = document.createElement('td');
-                            td.contentEditable = true;
-                            td.dataset.row = rowIndex; // Store row index in data attribute
-                            td.dataset.col = colIndex; // Store column index in data attribute
-                            td.innerText = cellValue;
-                            tr.appendChild(td);
-                        });
-                        tableBody.appendChild(tr);
-                    });
-    
-                    // Optionally, reload the page to refresh the table and other data
-                    location.reload(); // You can comment this out if not needed
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error auto-saving data:', error);
-            })
-            .finally(() => {
-                // Hide the loading message after the request is complete
-                document.getElementById('loadingMessage').style.display = 'none';
-            });
+                    // Remove the loading class from the cell
+                    this.classList.remove('loading');
+                });
         });
     });
     

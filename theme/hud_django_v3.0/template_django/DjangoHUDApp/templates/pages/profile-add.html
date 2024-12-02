@@ -46,6 +46,17 @@
 </style>
 
             <div class="container mt-5">
+                {% if success %}
+                <script>
+                    window.onload = function() {
+                        alert("{{ success }}");
+                        // Redirect to login page after showing the alert
+                        window.location.href = "{% url 'DjangoHUDApp:profileadd' %}";
+                    };
+                </script>
+            {% endif %}
+
+
                 <form action="{% url 'DjangoHUDApp:profileadd' %}" method="POST" name="addprofile_form" enctype="multipart/form-data">
                     {% csrf_token %}
                     <h1 class="text-center">Add Profile</h1>
@@ -92,13 +103,13 @@
                         <div class="col-md-4 form-group">
                             <label for="birth_date" class="form-label">Date of Birth <span class="text-danger">*</span></label>
                             <input type="date" id="birth_date" name="birth_date" class="form-control form-control-lg" 
-                                value="{{ profile.birth_date }}" required>
+                                value="{{ profile.birth_date }}" >
                         </div>
 
                         <div class="col-md-4 form-group">
                             <label for="mobile_number" class="form-label">Mobile Number <span class="text-danger">*</span></label>
                             <input type="tel" id="mobile_number" name="mobile_number" class="form-control form-control-lg" 
-                                value="{{ profile.mobile_number }}" required>
+                                value="{{ profile.mobile_number }}" >
                         </div>
 
                     </div>
@@ -108,42 +119,42 @@
                         <div class="col-md-4 form-group">
                             <label for="college_name" class="form-label">College Name <span class="text-danger">*</span></label>
                             <input type="text" id="college_name" name="college_name" class="form-control form-control-lg" 
-                                value="{{ profile.college_name }}" required>
+                                value="{{ profile.college_name }}" >
                         </div>
 
                         <div class="col-md-4 form-group">
                             <label for="id_number" class="form-label">ID Number <span class="text-danger">*</span></label>
                             <input type="text" id="id_number" name="id_number" class="form-control form-control-lg" 
-                                value="{{ profile.id_number }}" required>
+                                value="{{ profile.id_number }}" >
                         </div>
 
                         <div class="col-md-4 form-group">
                             <label for="batch_number" class="form-label">Batch Number <span class="text-danger">*</span></label>
                             <input type="text" id="batch_number" name="batch_number" class="form-control form-control-lg" 
-                                value="{{ profile.batch_number }}" required>
+                                value="{{ profile.batch_number }}" >
                         </div>
 
                     </div>
 
                     <div class="row mt-2">
-                    <!-- City Field -->
+                       <!-- City Field -->
                             <div class="col-md-4 form-group">
                                     <label for="city" class="form-label">City <span class="text-danger">*</span></label>
                                     <input type="text" id="city" name="city" class="form-control form-control-lg" 
-                                    value="{{ profile.city }}" required>
+                                    value="{{ profile.city }}" >
                             </div>
                         <!-- Address Field -->
                                 <div class="col-md-4 form-group">
                                     <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
                                     <input type="text" id="address" name="address" class="form-control form-control-lg" 
-                                        value="{{ profile.address }}" required>
+                                        value="{{ profile.address }}" >
                                 </div>
 
                                     <!-- State Field -->
                                     <div class="col-md-4 form-group">
                                         <label for="state" class="form-label">State <span class="text-danger">*</span></label>
                                         <input type="text" id="state" name="state" class="form-control form-control-lg" 
-                                            value="{{ profile.state }}" required>
+                                            value="{{ profile.state }}" >
                                     </div>
                     </div>
 
@@ -152,7 +163,7 @@
 
                         <div class="col-md-4 form-group">
                             <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
-                            <select id="country" name="country" class="form-select form-select-lg" required>
+                            <select id="country" name="country" class="form-select form-select-lg" >
                                 <option value="India" {% if profile.country == 'India' %}selected{% endif %}>India</option>
                                 <option value="United States" {% if profile.country == 'United States' %}selected{% endif %}>United States</option>
                             </select>
@@ -162,12 +173,12 @@
                         <div class="col-md-4 form-group">
                             <label for="qualification" class="form-label">Qualification <span class="text-danger">*</span></label>
                             <input type="text" id="qualification" name="qualification" class="form-control form-control-lg" 
-                                value="{{ profile.qualification }}" required>
+                                value="{{ profile.qualification }}" >
                         </div>
 
                         <div class="col-md-4 form-group">
                             <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
-                            <select id="role" name="role" class="form-select form-select-lg" required>
+                            <select id="role" name="role" class="form-select form-select-lg" >
                                 <option value="Admin" {% if profile.country == 'Admin' %}selected{% endif %}>Admin</option>
                                 <option value="Manager" {% if profile.country == 'Manager' %}selected{% endif %}>Manager</option>
                                 <option value="Superadmin" {% if profile.country == 'Superadmin' %}selected{% endif %}>Super Admin</option>
@@ -183,17 +194,17 @@
                         <!-- Language Field -->
                         <div class="col-md-4 form-group">
                             <label for="language" class="form-label">Language <span class="text-danger">*</span></label>
-                            <select id="language" name="language" class="form-select form-select-lg" required>
+                            <select id="language" name="language" class="form-select form-select-lg" >
                                 <option value="English" {% if profile.language == 'English' %}selected{% endif %}>English</option>
                                 <option value="Hindi" {% if profile.language == 'Hindi' %}selected{% endif %}>Hindi</option>
                             </select>
                         </div>
 
 
-                    <!-- Skills Field -->
+                       <!-- Skills Field -->
                             <div class="col-md-4 form-group">
                                 <label for="skills" class="form-label">Skills<span class="text-danger">*</span></label>
-                                <select id="skills" name="skills" class="form-select form-select-lg" required>
+                                <select id="skills" name="skills" class="form-select form-select-lg" >
                                     <option value="Python" {% if profile.language == 'Python' %}selected{% endif %}>Python</option>
                                     <option value="JavaScript" {% if profile.language == 'JavaScript' %}selected{% endif %}>JavaScript</option>
                                     <option value="Java" {% if profile.language == 'Java' %}selected{% endif %}>Java</option>
@@ -203,11 +214,11 @@
 
                     
 
-                    <!-- Locations Field -->
+                      <!-- Locations Field -->
                                 <div class="col-md-4 form-group">
                                     <label for="locations" class="form-label">Preferred Locations <span class="text-danger">*</span></label>
                                     <input type="text" id="locations" name="locations" class="form-control form-control-lg" 
-                                        value="{{ profile.locations }}" required>
+                                        value="{{ profile.locations }}" >
                                 </div>
                     </div>
 
@@ -218,20 +229,20 @@
                         <div class="col-md-4 form-group">
                             <label for="bank_name" class="form-label">Bank Name <span class="text-danger">*</span></label>
                             <input type="text" id="bank_name" name="bank_name" class="form-control form-control-lg" 
-                                value="{{ profile.bank_name }}" required>
+                                value="{{ profile.bank_name }}" >
                         </div>
 
                         <!-- Branch Name Field -->
                         <div class="col-md-4 form-group">
                             <label for="branch_name" class="form-label">Branch Name <span class="text-danger">*</span></label>
                             <input type="text" id="branch_name" name="branch_name" class="form-control form-control-lg" 
-                                value="{{ profile.branch_name }}" required>
+                                value="{{ profile.branch_name }}" >
                         </div>
                                 <!-- IFSC Code Field -->
                                 <div class="col-md-4 form-group">
                                     <label for="ifsc_code" class="form-label">IFSC Code <span class="text-danger">*</span></label>
                                     <input type="text" id="ifsc_code" name="ifsc_code" class="form-control form-control-lg" 
-                                        value="{{ profile.ifsc_code }}" required>
+                                        value="{{ profile.ifsc_code }}" >
                                 </div>
 
                     </div>
@@ -242,20 +253,20 @@
                         <div class="col-md-4 form-group">
                             <label for="account_number" class="form-label">Account Number <span class="text-danger">*</span></label>
                             <input type="text" id="account_number" name="account_number" class="form-control form-control-lg" 
-                                value="{{ profile.account_number }}" required>
+                                value="{{ profile.account_number }}" >
                         </div>
 
                         <!-- PAN Number Field -->
                         <div class="col-md-4 form-group">
                             <label for="pan_number" class="form-label">PAN Number <span class="text-danger">*</span></label>
                             <input type="text" id="pan_number" name="pan_number" class="form-control form-control-lg" 
-                                value="{{ profile.pan_number }}" required>
+                                value="{{ profile.pan_number }}" >
                         </div>
                                 <!-- GST Number Field -->
                                 <div class="col-md-4 form-group">
                                     <label for="gst_number" class="form-label">GST Number <span class="text-danger">*</span></label>
                                     <input type="text" id="gst_number" name="gst_number" class="form-control form-control-lg" 
-                                        value="{{ profile.gst_number }}" required>
+                                        value="{{ profile.gst_number }}" >
                                 </div>
 
                     </div>
@@ -274,7 +285,16 @@
                             <label for="certificate" class="form-label">Upload Certificate</label>
                             <input type="file" id="certificate" name="certificate" class="form-control form-control-lg">
                         </div>
-                        <!-- Ready to Relocate Field -->
+                        <div class="col-md-4 form-group">
+                            <label for="resume" class="form-label">Upload Resume</label>
+                            <input type="file" id="resume" name="resume" class="form-control form-control-lg">
+                        </div>
+                       
+
+                    </div>
+
+                    <div class="row mt-2">
+                              <!-- Ready to Relocate Field -->
                                 <div class="col-md-4 form-group">
                                     <label for="ready_to_relocate" class="form-label">Ready to Relocate <span class="text-danger">*</span></label>
                                     <select id="ready_to_relocate" name="ready_to_relocate" class="form-select form-select-lg" required>
@@ -282,23 +302,17 @@
                                         <option value="No" {% if profile.ready_to_relocate == 'No' %}selected{% endif %}>No</option>
                                     </select>
                                 </div>
-                    </div>
-
-                    <div class="row mt-2">
                     
 
-                        <div class="col-md-4 form-group">
-                            <label for="resume" class="form-label">Upload Resume</label>
-                            <input type="file" id="resume" name="resume" class="form-control form-control-lg">
-                        </div>
+                      
                     
                         <!-- Role Field -->
                         <!-- Experience Field -->
-                        <div class="col-md-4 form-group">
-                            <label for="experience" class="form-label">Experience (in years) <span class="text-danger">*</span></label>
-                            <input type="number" id="experience" name="experience" class="form-control form-control-lg" 
-                                value="{{ profile.experience }}" required>
-                        </div>
+                                <div class="col-md-4 form-group">
+                                    <label for="experience" class="form-label">Experience (in years) <span class="text-danger">*</span></label>
+                                    <input type="number" id="experience" name="experience" class="form-control form-control-lg" 
+                                        value="{{ profile.experience }}" >
+                                </div>
                     </div>
 
                     <div class="text-center mt-3">
@@ -312,4 +326,4 @@
             </div>
              
 
-{% endblock %}
+{% endblock %} 
